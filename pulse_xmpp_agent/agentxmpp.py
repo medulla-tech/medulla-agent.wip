@@ -36,6 +36,7 @@ import subprocess
 import psutil
 import random
 import hashlib
+from lib.manageresourceplugin import resource_plugin
 from lib.reverseport import reverse_port_ssh
 from lib.agentconffile import conffilename
 from lib.update_remote_agent import Update_Remote_Agent
