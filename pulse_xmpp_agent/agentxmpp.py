@@ -60,7 +60,7 @@ from lib.utils import   DEBUGPULSE, getIpXmppInterface, refreshfingerprint,\
                         isBase64, connection_established, file_put_contents, \
                         simplecommand, testagentconf, \
                         Setdirectorytempinfo, setgetcountcycle, setgetrestart, \
-                        protodef, geolocalisation_agent
+                        protodef, geolocalisation_agent, Env
 from lib.manage_xmppbrowsing import xmppbrowsing
 from lib.manage_event import manage_event
 from lib.manage_process import mannageprocess, process_on_end_send_message_xmpp
@@ -141,6 +141,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
         logging.warning("check connexion xmpp %ss" % laps_time_check_established_connection)
         self.back_to_deploy = {}
         self.config = conf
+        Env.agenttype = self.config.agenttype
         managepackage.agenttype = self.config.agenttype
         # creation object session ##########
         self.session = session(self.config.agenttype)
