@@ -30,7 +30,21 @@ import re
 logger = logging.getLogger()
 DEBUGPULSEPLUGIN = 25
 
-plugin = {"VERSION" : "2.0", "NAME" : "start", "TYPE" : "all"}
+plugin = {"VERSION" : "2.1", "NAME" : "start", "TYPE" : "all"}
+
+def read_conf_plugin_start(objectxmpp):
+    objectxmpp.liststartplugin = []
+    configfilename = os.path.join(directoryconffile(),"start.ini")
+    if os.path.isfile(configfilename):
+        # lit la configuration
+        Config = ConfigParser.ConfigParser()
+        Config.read(configfilename)
+        if Config.has_option('plugins', 'liststartplugin'):
+            liststartplugin = Config.get('plugins', 'liststartplugin')
+            objectxmpp.liststartplugin = [x for x in
+                                            re.split(r'[;,\[\(\]\)\{\}\:\=\+\*\\\?\/\#\+\.\&\-\@\$\|\s]\s*',
+                                                     liststartplugin)
+                                            if x.strip()!=""]
 
 def read_conf_plugin_start(objectxmpp):
     objectxmpp.liststartplugin = []

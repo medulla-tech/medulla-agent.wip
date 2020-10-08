@@ -93,6 +93,7 @@ PULSE_AGENT_MODULE="pulse_xmpp_agent"
 RSYNC_DL_FILENAME="cwRsync_5.5.0_x86_Free.zip"
 RSYNC_FILENAME="rsync.zip"
 OPENSSH_NAME="OpenSSH"
+OPENSSH_VERSION="7.7"
 OPENSSH32_FILENAME="${OPENSSH_NAME}-Win32.zip"
 OPENSSH64_FILENAME="${OPENSSH_NAME}-Win64.zip"
 LAUNCHER_SSH_KEY="/root/.ssh/id_rsa.pub"
@@ -111,7 +112,7 @@ CREATE_PROFILE_FILENAME="create-profile.ps1"
 REMOVE_PROFILE_FILENAME="remove-profile.ps1"
 PULSE_SERVICE_FILENAME="pulse-service.py"
 PULSE_AGENT_CONFFILE_FILENAME="agentconf.ini"
-PULSE_SCHEDULER_CONFFILE_FILENAME="manage_scheduler.ini"
+PULSE_SCHEDULER_CONFFILE_FILENAME="manage_scheduler_machine.ini"
 PULSE_INVENTORY_CONFFILE_FILENAME="inventory.ini"
 PULSE_AGENT_TASK_XML_FILENAME="pulse-agent-task.xml"
 NETCHECK_SERVICE_FILENAME="netcheck-service.py"
@@ -362,9 +363,8 @@ prepare_mandatory_includes() {
     if [ -e ${DOWNLOADS_DIR}/${LGPO_DL_FILENAME} ]; then
 		pushd ${DOWNLOADS_DIR}
 		unzip -q ${LGPO_DL_FILENAME}
-        cp LGPO.exe bin/${LGPO_FILENAME}
-        rm -rf ${LGPO_DL_FILENAME::-4}.pdf
-        rm -rf ${LGPO_DL_FILENAME::-4}.exe
+        cp LGPO_30/LGPO.exe bin/${LGPO_FILENAME}
+        rm -rf LGPO_30
 		popd
     else
         colored_echo red "${LGPO_DL_FILENAME} is not present in ${DOWNLOADS_DIR}. Please restart."
@@ -399,6 +399,7 @@ update_nsi_script() {
 		-e "s/@@PULSE_AGENT_MODULE@@/${PULSE_AGENT_MODULE}/" \
 		-e "s/@@PULSE_AGENT_TASK_XML_FILENAME@@/${PULSE_AGENT_TASK_XML_FILENAME}/" \
 		-e "s/@@OPENSSH_NAME@@/${OPENSSH_NAME}/" \
+		-e "s/@@OPENSSH_VERSION@@/${OPENSSH_VERSION}/" \
 		-e "s/@@OPENSSH32_FILENAME@@/${OPENSSH32_FILENAME}/" \
 		-e "s/@@OPENSSH64_FILENAME@@/${OPENSSH64_FILENAME}/" \
 		-e "s/@@FULL_OR_DL_OPENSSH32@@/${FULL_OR_DL_OPENSSH32}/" \
