@@ -2300,7 +2300,8 @@ AGENT %s ERROR TERMINATE"""%(self.boundjid.bare,
                     return True
         return False
 
-def createDaemon(optstypemachine, optsconsoledebug, optsdeamon, tglevellog, tglogfile):
+def createDaemon(optstypemachine, optsconsoledebug,
+                 optsdeamon, tgfichierconf, tglevellog, tglogfile):
     """
         This function create a service/Daemon that will execute a det. task
     """
@@ -2364,7 +2365,7 @@ def createDaemon(optstypemachine, optsconsoledebug, optsdeamon, tglevellog, tglo
                 f.write('%s\n' % pid)
             finally:
                 f.close()
-            doTask(optstypemachine, optsconsoledebug, optsdeamon, tglevellog, tglogfile)
+            doTask(optstypemachine, optsconsoledebug, optsdeamon, tgfichierconf, tglevellog, tglogfile)
     except OSError, error:
         logging.error("Unable to fork. Error: %d (%s)" % (error.errno, error.strerror))
         logging.error("\n%s"%(traceback.format_exc()))
