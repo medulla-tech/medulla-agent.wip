@@ -834,7 +834,7 @@ class PkgsDatabase(DatabaseHelper):
                 resuldict['type']=y[4]
                 resuldict['uri']=y[5]
                 resuldict['ars_name']=y[6]
-                resuldict['ars_id']=[7]
+                resuldict['ars_id']=y[7]
                 resuldict['share_path']=y[8]
                 # information from table pkgs_rules_local or pkgs_rules_global
                 resuldict['id_rule']=y[9]
@@ -852,7 +852,7 @@ class PkgsDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def pkgs_sharing_admin_profil(self, session):
         """ renvoi tout les partages """
-        sql ="""SELECT
+        sql ="""SELECT 
                     pkgs.pkgs_shares.id AS id_sharing,
                     pkgs.pkgs_shares.name AS name,
                     pkgs.pkgs_shares.comments AS comments,
@@ -861,33 +861,11 @@ class PkgsDatabase(DatabaseHelper):
                     pkgs.pkgs_shares.uri AS uri,
                     pkgs.pkgs_shares.ars_name AS ars_name,
                     pkgs.pkgs_shares.ars_id AS ars_id,
-                    pkgs.pkgs_shares.share_path AS share_path,
-                    pkgs.pkgs_rules_local.id AS id_rule,
-                    pkgs.pkgs_rules_local.pkgs_rules_algos_id AS algos_id,
-                    pkgs.pkgs_rules_local.order AS order_rule,
-                    pkgs.pkgs_rules_local.suject AS suject
+                    pkgs.pkgs_shares.share_path AS share_path
                 FROM
                     pkgs.pkgs_shares
-                        INNER JOIN
-                    pkgs.pkgs_rules_local ON pkgs.pkgs_rules_local.pkgs_shares_id = pkgs.pkgs_shares.id
-                UNION SELECT
-                    pkgs.pkgs_shares.id AS id_sharing,
-                    pkgs.pkgs_shares.name AS name,
-                    pkgs.pkgs_shares.comments AS comments,
-                    pkgs.pkgs_shares.enabled AS enabled,
-                    pkgs.pkgs_shares.type AS type,
-                    pkgs.pkgs_shares.uri AS uri,
-                    pkgs.pkgs_shares.ars_name AS ars_name,
-                    pkgs.pkgs_shares.ars_id AS ars_id,
-                    pkgs.pkgs_shares.share_path AS share_path,
-                    pkgs.pkgs_rules_global.id AS id_rule,
-                    pkgs.pkgs_rules_global.pkgs_rules_algos_id AS algos_id,
-                    pkgs.pkgs_rules_global.order AS orderrule,
-                    pkgs.pkgs_rules_global.suject AS suject
-                FROM
-                    pkgs.pkgs_shares
-                        INNER JOIN
-                    pkgs.pkgs_rules_global ON pkgs.pkgs_rules_global.pkgs_shares_id = pkgs.pkgs_shares.id;"""
+                WHERE
+                     pkgs.pkgs_shares.enabled = 1;"""
         logging.getLogger().debug(str(sql))
         result = session.execute(sql)
         session.commit()
@@ -903,12 +881,7 @@ class PkgsDatabase(DatabaseHelper):
                 resuldict['type']=y[4]
                 resuldict['uri']=y[5]
                 resuldict['ars_name']=y[6]
-                resuldict['ars_id']=[7]
+                resuldict['ars_id']=y[7]
                 resuldict['share_path']=y[8]
-                # information from table pkgs_rules_local or pkgs_rules_global
-                resuldict['id_rule']=y[9]
-                resuldict['algos_id']=y[10]
-                resuldict['order_rule']=y[11]
-                resuldict['regexp']=y[12]
                 ret.append(resuldict)
         return ret
