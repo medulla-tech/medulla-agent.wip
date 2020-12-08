@@ -34,7 +34,7 @@ SCHEDULE = {"schedule" : "30 22 * * 2", "nb" : -1}
 
 def schedule_main(objectxmpp):
     """ install
-        donwnload ffile Wsusscn2.cab
+        # donwnload ffile Wsusscn2.cab
     """
     print "*******************************************"
     print "*******************************************"
