@@ -26,7 +26,7 @@ from distutils.version import StrictVersion
 import logging
 import shutil
 from lib import utils
-NETWORKVERSION = '2.1.2'
+NETWORKVERSION = '2.1.3'
 
 logger = logging.getLogger()
 
@@ -66,7 +66,7 @@ def updatenetworkcheckversion(version):
 
         result = utils.simplecommand(cmd)
         if result['code'] == 0:
-            logger.debug("we successfully changed the version of Pulse network notify")
+            logger.info("we successfully updated Pulse network notify to version %s" % NETWORKVERSION)
 
         if version == "0.1":
             cmdDisplay = 'REG ADD "hklm\\software\\microsoft\\windows\\currentversion\\uninstall\\Pulse network notify" '\
@@ -91,7 +91,7 @@ def updatenetworkcheck(xmppobject):
         logger.debug("Downloading %s" % dl_url)
         result, txtmsg = utils.downloadfile(dl_url, os.path.join(pulsedir_path, filename)).downloadurl()
         if result:
-            logger.debug("%s" % txtmsg_js)
+            logger.debug("%s" % txtmsg)
         else:
             # Download error
             logger.error("%s" % txtmsg)

@@ -21,7 +21,6 @@
 # MA 02110-1301, USA.
 # file /pulse_xmpp_agent/agentxmpp.py
 
-from resource import RLIMIT_NOFILE, RLIM_INFINITY, getrlimit
 import sys
 import os
 import logging
@@ -96,6 +95,7 @@ if sys.platform.startswith('win'):
     import win32com.client
 else:
     import signal
+    from resource import RLIMIT_NOFILE, RLIM_INFINITY, getrlimit
 
 from lib.server_kiosk import process_tcp_serveur, manage_kiosk_message, process_serverPipe
 
@@ -204,9 +204,9 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                                    "lib",
                                                    "INFOSTMP",
                                                    'fingerprintnetwork')
-        logging.error("nom fichier %s" % filetempinfolibfingerprint)
+        logging.debug("filename: %s" % filetempinfolibfingerprint)
         if os.path.exists(filetempinfolibfingerprint):
-            logging.error("fichier fingerprintactiel %s" % file_get_contents(filetempinfolibfingerprint))
+            logging.debug("actuel fingerprint file %s" % file_get_contents(filetempinfolibfingerprint))
             # comparaison
             if netfingerprintstart != file_get_contents(filetempinfolibfingerprint):
                 logging.warning("after start : registration must update the information in the xmpp tables.")
@@ -2529,7 +2529,6 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
                                                       p.pid,
                                                       p.name,
                                                       p.pid))
-    logger.debug("process %s -> %s")
     p = Process(target=process_tcp_serveur,
                 name="tcp_serveur",
                 args=(  14000,
@@ -2663,73 +2662,73 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
         server1.subscribe()
         cherrypy.engine.start()
 
-        if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-            # completing process
-            programrun = True
-            while True:
-                time.sleep(120)
-                for p in processes:
-                    if p.is_alive():
-                        logger.debug("Alive %s (%s)"%(p.name,p.pid))
-                        if p.name == "xmppagent":
-                            cmd = "ps ax | grep $(pgrep --parent %s) | grep \"defunct\""%p.pid
-                            result = simplecommand(cmd)
-                            if result['code'] == 0:
-                                if result['result']:
-                                    programrun = False
-                                    break
-                    else:
-                        logger.error("Not ALIVE %s (%s) "%(p.name, p.pid))
-                        programrun = False
-                        break
-                if not programrun:
-                    logging.debug("END PROGRAMM")
-                    for p in processes:
-                        p.terminate()
-                    cmd = "kill -s kill %s"%os.getpid()
-                    result = simplecommand(cmd)
+    if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+        # completing process
+        programrun = True
+        while True:
+            time.sleep(120)
+            for p in processes:
+                if p.is_alive():
+                    logger.debug("Alive %s (%s)"%(p.name,p.pid))
+                    if p.name == "xmppagent":
+                        cmd = "ps ax | grep $(pgrep --parent %s) | grep \"defunct\""%p.pid
+                        result = simplecommand(cmd)
+                        if result['code'] == 0:
+                            if result['result']:
+                                programrun = False
+                                break
+                else:
+                    logger.error("Not ALIVE %s (%s) "%(p.name, p.pid))
+                    programrun = False
                     break
-        elif sys.platform.startswith('win'):
-            #time.sleep(30)
-            windowfilepid = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                         "INFOSTMP",
-                                         "pidagentwintree")
-            dd=process_agent_search(os.getpid())
+            if not programrun:
+                logging.debug("END PROGRAMM")
+                for p in processes:
+                    p.terminate()
+                cmd = "kill -s kill %s"%os.getpid()
+                result = simplecommand(cmd)
+                break
+    elif sys.platform.startswith('win'):
+        #time.sleep(30)
+        windowfilepid = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                     "INFOSTMP",
+                                     "pidagentwintree")
+        dd = process_agent_search(os.getpid())
+        processwin = json.dumps(dd.pidlist(),indent=4)
+        file_put_contents(windowfilepid, "%s" % processwin)
+        logging.debug("Process agent list : %s" % processwin)
+        while True:
+            time.sleep(120)
+            dd = process_agent_search(os.getpid())
             processwin = json.dumps(dd.pidlist(),indent=4)
             file_put_contents(windowfilepid, "%s" % processwin)
             logging.debug("Process agent list : %s" % processwin)
-            while True:
-                time.sleep(120)
-                dd=process_agent_search(os.getpid())
-                processwin = json.dumps(dd.pidlist(),indent=4)
-                file_put_contents(windowfilepid, "%s" % processwin)
-                logging.debug("Process agent list : %s" % processwin)
-                # list python process
-                lpidsearch=[]
-                for k, v in dd.get_pid().iteritems():
-                    if "python.exe" in v:
-                        lpidsearch.append(int(k))
-                logging.debug("Process python list : %s"%lpidsearch)
-                for pr in processes:
-                    logging.info("search %s in %s" % (pr.pid, lpidsearch))
-                    if pr.pid not in lpidsearch:
-                        logging.debug("Process %s pid %s is missing %s" % (pr.name, pr.pid, lpidsearch))
-                        for p in processes:
-                            p.terminate()
-                        logging.debug("END PROGRAMM")
-                        cmd = "taskkill /F /PID %s" % os.getpid()
-                        result = simplecommand(cmd)
-                        break
-        else:
-            # completing process
-            try:
-                for p in processes:
-                    p.join()
-            except KeyboardInterrupt:
-                logging.error("TERMINATE PROGRAMM ON CTRL+C")
-                sys.exit(1)
-            except Exception as e:
-                logging.error("TERMINATE PROGRAMM ON ERROR : %s"%str(e))
+            # list python process
+            lpidsearch=[]
+            for k, v in dd.get_pid().iteritems():
+                if "python.exe" in v:
+                    lpidsearch.append(int(k))
+            logging.debug("Process python list : %s"%lpidsearch)
+            for pr in processes:
+                logging.debug("search %s in %s" % (pr.pid, lpidsearch))
+                if pr.pid not in lpidsearch:
+                    logging.debug("Process %s pid %s is missing %s" % (pr.name, pr.pid, lpidsearch))
+                    for p in processes:
+                        p.terminate()
+                    logging.debug("END PROGRAMM")
+                    cmd = "taskkill /F /PID %s" % os.getpid()
+                    result = simplecommand(cmd)
+                    break
+    else:
+        # completing process
+        try:
+            for p in processes:
+                p.join()
+        except KeyboardInterrupt:
+            logging.error("TERMINATE PROGRAMM ON CTRL+C")
+            sys.exit(1)
+        except Exception as e:
+            logging.error("TERMINATE PROGRAMM ON ERROR : %s"%str(e))
     logging.debug("END PROGRAMM")
     sys.exit(0)
 
