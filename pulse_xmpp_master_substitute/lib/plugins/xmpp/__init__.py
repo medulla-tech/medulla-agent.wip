@@ -4198,6 +4198,74 @@ class XmppMasterDatabase(DatabaseHelper):
         return [x for x in result]
 
     @DatabaseHelper._sessionm
+    def column_list_table(self, session, tablename, basename="xmppmaster" ):
+        """
+            This function returns the list of column titles in the table,
+            where the name of this table is passed as a parameter.
+        """
+        try:
+            sql = """SELECT
+                        column_name
+                    FROM
+                        information_schema.columns WHERE table_name = '%s'
+                        AND
+                        table_schema='%s';""" % (tablename, basename)
+            result = session.execute(sql)
+            session.commit()
+            session.flush()
+            return [x[0] for x in result]
+        except Exception, e:
+            logging.getLogger().error(str(e))
+            logging.getLogger().error("\n%s" % (traceback.format_exc()))
+
+    @DatabaseHelper._sessionm
+    def random_list_ars_relay_one_only_in_cluster(self, sessiontype_return="dict"):
+        """
+            this function search 1 list ars.
+            1 only ars by cluster.
+            the ars of cluster is randomly selected
+
+            return object is 1 list organize per row found.
+                following the sessiontype_return parameter:
+                    - sessiontype_return is "dict"
+                        the rows are expressed in the form of dictionary (column name, value column)
+                    - sessiontype_return is "list"
+                        the rows are expressed as a list of values.
+        """
+        sql = """SELECT
+                    *
+                FROM
+                    xmppmaster.relayserver
+                WHERE
+                    `xmppmaster`.`relayserver`.`id` IN
+                    ( SELECT
+                            id_ars
+                      FROM
+                            (SELECT
+                                id_cluster, id_ars
+                             FROM
+                                xmppmaster.has_cluster_ars
+                             ORDER BY RAND()) idarsandidclusterrandon
+                      GROUP BY id_cluster);"""
+        result = session.execute(sql)
+        session.commit()
+        session.flush()
+        a = []
+        if result:
+            if sessiontype_return == "dict":
+                columnlist = self.column_list_table("relayserver")
+                for ligneresult in [x for x in result]:
+                    obj = {}
+                    for index, value in enumerate(columnlist):
+                        obj[value] = ligneresult[index]
+                    a.append(obj)
+                return a
+            else:
+                return [x[0] for x in result]
+        else:
+            return []
+
+    @DatabaseHelper._sessionm
     def listmachines(self, session):
         sql = """SELECT
                     jid
@@ -4219,7 +4287,7 @@ class XmppMasterDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def listMacAdressforMachine(self, session, id_machine, infomac=False):
         try:
-            sql = """SELECT 
+            sql = """SELECT
                         GROUP_CONCAT(DISTINCT mac ORDER BY mac ASC  SEPARATOR ',') AS listmac
                     FROM
                         xmppmaster.network
