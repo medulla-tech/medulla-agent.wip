@@ -4219,7 +4219,7 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error("\n%s" % (traceback.format_exc()))
 
     @DatabaseHelper._sessionm
-    def random_list_ars_relay_one_only_in_cluster(self, sessiontype_return="dict"):
+    def random_list_ars_relay_one_only_in_cluster(self, session, sessiontype_return="dict"):
         """
             this function search 1 list ars.
             1 only ars by cluster.
@@ -4237,16 +4237,22 @@ class XmppMasterDatabase(DatabaseHelper):
                 FROM
                     xmppmaster.relayserver
                 WHERE
-                    `xmppmaster`.`relayserver`.`id` IN
-                    ( SELECT
-                            id_ars
-                      FROM
+                    `xmppmaster`.`relayserver`.`id` IN (
+                        SELECT
+                            id
+                        FROM
                             (SELECT
-                                id_cluster, id_ars
-                             FROM
-                                xmppmaster.has_cluster_ars
-                             ORDER BY RAND()) idarsandidclusterrandon
-                      GROUP BY id_cluster);"""
+                                id
+                            FROM
+                                (SELECT
+                                    xmppmaster.relayserver.id AS id,
+                                    xmppmaster.has_cluster_ars.id_cluster AS cluster
+                                FROM
+                                    xmppmaster.relayserver
+                                INNER JOIN xmppmaster.has_cluster_ars
+                                        ON xmppmaster.has_cluster_ars.id_ars = xmppmaster.relayserver.id
+                                ORDER BY RAND()) selectrandonlistars
+                            GROUP BY cluster) selectcluster);"""
         result = session.execute(sql)
         session.commit()
         session.flush()
