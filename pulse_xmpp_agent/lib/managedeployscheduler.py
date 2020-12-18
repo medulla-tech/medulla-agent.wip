@@ -72,26 +72,26 @@ class manageschedulerdeploy:
             try:
                 self.dbsessionscheduler = plyvel.DB(self.name_basesession, create_if_missing=True)
             except Exception:
-                logger.error("open pyvel db %s" % self.name_basesession)
+                logger.error("An error occured while opening the database: %s" % self.name_basesession)
                 os.remove(self.name_basesession)
                 self.dbsessionscheduler = plyvel.DB(self.name_basesession, create_if_missing=True)
             try:
                 self.dbcmdscheduler = plyvel.DB(self.name_basecmd, create_if_missing=True)
             except Exception:
-                logger.error("open pyvel db %s" % self.name_basecmd)
+                logger.error("An error occured while opening the database: %s" % self.name_basecmd)
                 os.remove(self.name_basecmd)
                 self.dbcmdscheduler = plyvel.DB(self.name_basecmd, create_if_missing=True)
         else:
             try:
                 self.dbcmdscheduler     = bsddb.btopen(self.name_basecmd , 'c')
             except Exception:
-                logger.error("open bsddb db %s" % self.name_basecmd)
+                logger.error("An error occured while opening the bsddb database: %s" % self.name_basecmd)
                 os.remove(self.name_basecmd)
                 self.dbcmdscheduler     = bsddb.btopen(self.name_basecmd , 'c')
             try:
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
             except Exception:
-                logger.error("open bsddb db %s" % self.name_basesession)
+                logger.error("An error occured while opening the bsddb database: %s" % self.name_basesession)
                 os.remove(self.name_basesession)
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
 
