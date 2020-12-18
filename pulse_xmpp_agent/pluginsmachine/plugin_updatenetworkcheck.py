@@ -30,7 +30,7 @@ NETWORKVERSION = '2.1.3'
 
 logger = logging.getLogger()
 
-plugin = {"VERSION": "1.1", "NAME": "updatenetworkcheck", "TYPE": "machine"}
+plugin = {"VERSION": "1.4", "NAME": "updatenetworkcheck", "TYPE": "machine"}
 
 
 def action(xmppobject, action, sessionid, data, message, dataerreur):
@@ -111,13 +111,16 @@ def updatenetworkcheck(xmppobject):
             # Download success
             logger.info("%s" % servicetxtmsg)
             # Run installer
-            servicecmd = 'C:\Python27\python.exe "%s\%s" --startup=auto install' % (pulsedir_path, servicefilename)
-            servicecmd_result = utils.simplecommand(servicecmd)
-            if servicecmd_result['code'] == 0:
-                logger.info("%s installed successfully" % servicefilename)
-            else:
-                logger.error("Error installing %s: %s"
-                             % (servicefilename, servicecmd_result['result']))
+            querycmd = "sc query pulsenetworknotify"
+            querycmd_result = utils.simplecommand(querycmd)
+            if querycmd_result['code'] != 0:
+                servicecmd = 'C:\Python27\python.exe "%s\%s" --startup=auto install' % (pulsedir_path, servicefilename)
+                servicecmd_result = utils.simplecommand(servicecmd)
+                if servicecmd_result['code'] == 0:
+                    logger.info("%s installed successfully" % servicefilename)
+                else:
+                    logger.error("Error installing %s: %s"
+                                 % (servicefilename, servicecmd_result['result']))
 
             update_command = 'C:\Python27\python.exe "%s\%s" update' % (pulsedir_path, servicefilename)
             utils.simplecommand(update_command)
