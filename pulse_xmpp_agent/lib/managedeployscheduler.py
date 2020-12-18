@@ -89,7 +89,7 @@ class manageschedulerdeploy:
                 os.remove(self.name_basecmd)
                 self.dbcmdscheduler     = bsddb.btopen(self.name_basecmd , 'c')
             except Exception as error:
-                logger.error("Opening the bsddb database failed with the error %s" % error)
+                logger.error("Opening the bsddb database failed with the error \n %s" % error)
 
             try:
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
@@ -98,7 +98,7 @@ class manageschedulerdeploy:
                 os.remove(self.name_basesession)
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
              except Exception as error:
-                logger.error("Opening the bsddb database failed with the error %s" % error)
+                logger.error("Opening the bsddb database failed with the error \n %s" % error)
 
     def closebase(self):
         self.dbcmdscheduler.close()
@@ -123,8 +123,8 @@ class manageschedulerdeploy:
             else:
                 self.dbsessionscheduler[sessionid] = objsession
                 self.dbsessionscheduler.sync()
-        except Exception:
-            logger.error("set_sesionscheduler %s" % self.name_basesession)
+        except Exceptionas exception_error:
+            logger.error("In the function set_sesionscheduler the plugin %s failed with the error: \n %s" % (self.name_basesession, exception_error))
         finally:
             self.closebase()
 
@@ -140,8 +140,8 @@ class manageschedulerdeploy:
             else:
                 if self.dbsessionscheduler.has_key(str(sessionid)):
                     data = self.dbsessionscheduler[sessionid]
-        except Exception:
-            logger.error("get_sesionscheduler %s" % self.name_basesession)
+        except Exception as exception_error:
+            logger.error("In the function get_sesionscheduler the plugin %s failed with the error: \n %s" % (self.name_basesession, exception_error))
         finally:
             self.closebase()
         return data
@@ -157,8 +157,8 @@ class manageschedulerdeploy:
                 if self.dbsessionscheduler.has_key(sessionid):
                     del self.dbsessionscheduler[sessionid]
                     self.dbsessionscheduler.sync()
-        except Exception:
-            logger.error("del_sesionscheduler %s" % self.name_basesession)
+        except Exception as exception_error:
+            logger.error("In the function del_sesionscheduler the plugin %s failed with the error: \n %s" % (self.name_basesession, exception_error))
         finally:
             self.closebase()
         return data
