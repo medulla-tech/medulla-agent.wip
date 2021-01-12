@@ -20,8 +20,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-# file pluginsmaster/plugin_wakeonlangroup.py
-# file pluginsmastersubstitute/plugin_wakeonlangroup.py
 
 import json
 import sys
@@ -46,11 +44,11 @@ def action(xmppobject, action, sessionid, data, message, ret):
     sessionid = name_random(5, "wakeonlangroup")
     try:
         compteurcallplugin = getattr(xmppobject, "num_call%s"%action)
-        logger.debug("compteurcallplugin %s"%compteurcallplugin)
+        logger.debug("compteurcallplugin %s" % compteurcallplugin)
         if compteurcallplugin == 0:
             read_conf_wol(xmppobject)
     except:
-        logger.error("plugin %s\n%s"%(plugin['NAME'], traceback.format_exc()))
+        logger.error("plugin %s\n%s" % (plugin['NAME'], traceback.format_exc()))
 
     try:
         if xmppobject.wakeonlangroupremotelan :
@@ -65,28 +63,28 @@ def action(xmppobject, action, sessionid, data, message, ret):
                                             mbody=json.dumps(senddataplugin,
                                                              encoding='latin1'),
                                             mtype='chat')
-                    msglog = "REMONTE WOL : ARS %s : WOL sent " \
-                             "to mac address %s" % (serverrelay['jid'],
-                                                    data['macadress'])
+                    msglog = "A WOL request has been sent from the ARS %s " \
+                             "to the mac address %s" % (serverrelay['jid'],
+                                                        data['macadress'])
                     historymessage(xmppobject, sessionid, msglog)
                     logger.debug(msglog)
             else:
                 raise
         else:
-            # local WOL
             if 'macadress' in data:
                 wol.send_magic_packet(*data['macadress'],
                                       port=xmppobject.wakeonlangroupport)
-                msglog = "local lan WOL for mac "\
-                         "address %s - [port %s]" % ( data['macadress'],
-                                                      xmppobject.wakeonlangroupport)
+                msglog = "A local lan WOL request have been sent to the" \
+                         " mac address %s and port %s" % (data['macadress'],
+                                                          xmppobject.wakeonlangroupport)
                 historymessage(xmppobject, sessionid, msglog)
                 logger.debug(msglog)
 
-    except Exception:
-        msglog = "Error plugin plugin_wakeonlan %s" % data
+    except Exception as error_exception:
+        msglog = "An error occurent when loading the plugin plugin_wakeonlangroup %s" % data
         tracebackerror= "\n%s" % (traceback.format_exc())
-        logger.error("%s\n%s"%(tracebackerror, msglog))
+        logger.error("%s\n%s" % (tracebackerror, msglog))
+        logger.error("The exception raised is %s" % error_exception)
         historymessage(xmppobject,
                        sessionid,
                        "%s\ndetail error:\n%s"%(msglog,
@@ -108,37 +106,32 @@ def historymessage(xmppobject, sessionid, msg):
 
 
 def read_conf_wol(xmppobject):
-    namefichierconf = plugin['NAME'] + ".ini"
-    pathfileconf = os.path.join( xmppobject.config.pathdirconffile, namefichierconf )
-    logger.debug("fichier de configuration is %s" % pathfileconf)
+    """
+        This function read the configuration file for the wol plugin.
+        The configuration file should be like:
+        [parameters]
+        remotelan = True
+        # wakeonlanport using only for remotelan is False
+        wakeonlanport = 9
+    """
+
+    conf_filename = plugin['NAME'] + ".ini"
+    pathfileconf = os.path.join( xmppobject.config.pathdirconffile, conf_filename)
+    logger.debug("The configuration file is %s" % pathfileconf)
     xmppobject.wakeonlangroupremotelan = True
     xmppobject.wakeonlangroupport = 9
     if not os.path.isfile(pathfileconf):
-        logger.error("plugin %s\nConfiguration file :\n" \
-                     "\t%s missing\n" \
-                     "eg conf:\n[wakeonlan]\n" \
-                     "remotelan = True\n" \
-                     "# wakeonlanport using only for remotelan is False\n" \
-                     "wakeonlanport = 9"%(plugin['NAME'],
-                                          pathfileconf))
-        logger.warning("Configuration default :\n\t\tdefault value for \"remotelan\" is True\n"\
-                       "\t\tdefault value for \"wakeonlanport\" is 9 (only if remotelan is False)\n")
+        logger.error("The configuration file for the plugin %s is missing.\n" \
+                     "It should be located to %s)" % (plugin['NAME'], pathfileconf))
     else:
         Config = ConfigParser.ConfigParser()
         Config.read(pathfileconf)
         if os.path.exists(pathfileconf + ".local"):
             Config.read(pathfileconf + ".local")
 
-        if Config.has_option("wakeonlan", "remotelan"):
-            xmppobject.wakeonlangroupremotelan = Config.getboolean('wakeonlan', 'remotelan')
+        if Config.has_option("parameters", "remotelan"):
+            xmppobject.wakeonlangroupremotelan = Config.getboolean('parameters', 'remotelan')
 
         if not xmppobject.wakeonlangroupremotelan:
-            if Config.has_option("wakeonlan", "wakeonlanport"):
-                xmppobject.wakeonlangroupport = Config.getint('wakeonlan', 'wakeonlanport')
-        logger.debug("plugin %s\nfile name : %s\n" \
-                         "\tConfiguration parameters is :\n" \
-                         "\t\t\"remotelan\" is %s\n"\
-                         "\t\t\"wakeonlanport\" is %s" % (plugin['NAME'],
-                                                          pathfileconf,
-                                                          xmppobject.wakeonlangroupremotelan,
-                                                          xmppobject.wakeonlangroupport))
+            if Config.has_option("parameters", "wakeonlanport"):
+                xmppobject.wakeonlangroupport = Config.getint('parameters', 'wakeonlanport')

@@ -20,7 +20,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-# file pluginsmastersubstitute/plugin_wakeonlan.py
 
 
 import json
@@ -41,17 +40,17 @@ plugin = {"VERSION": "1.1", "NAME": "wakeonlan", "TYPE": "master"}
 
 def action(xmppobject, action, sessionid, data, message, ret, dataobj):
     logger.debug("=====================================================")
-    logger.debug("call %s from %s"%(plugin, message['from']))
+    logger.debug("call %s from %s" % (plugin, message['from']))
     logger.debug("=====================================================")
     sessionid = name_random(5, "wakeonlan")
 
     try:
         compteurcallplugin = getattr(xmppobject, "num_call%s"%action)
-        logger.debug("compteurcallplugin %s"%compteurcallplugin)
+        logger.debug("compteurcallplugin %s" % compteurcallplugin)
         if compteurcallplugin == 0:
             read_conf_wol(xmppobject)
     except:
-        logger.error("plugin %s\n%s"%(plugin['NAME'], traceback.format_exc()))
+        logger.error("plugin %s\n%s" % (plugin['NAME'], traceback.format_exc()))
 
     try:
         if xmppobject.wakeonlanremotelan :
@@ -68,9 +67,9 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
                                             mbody=json.dumps(senddataplugin,
                                                              encoding='latin1'),
                                             mtype='chat')
-                    msglog = "REMONTE WOL : ARS %s : WOL sent " \
-                             "to mac address %s" % (serverrelay['jid'],
-                                                    data['macadress'])
+                    msglog = "A WOL request has been sent from the ARS %s " \
+                             "to the mac address %s" % (serverrelay['jid'],
+                                                        data['macadress'])
                     historymessage(xmppobject, sessionid, msglog)
                     logger.debug(msglog)
 
@@ -86,22 +85,22 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
                                                 mbody=json.dumps(senddataplugin,
                                                                  encoding='latin1'),
                                                 mtype='chat')
-                        msglog = "REMONTE WOL : ARS %s : WOL sent to mac address %s " \
-                                 "for mach uuid %s" % (serverrelay['jid'],
-                                                       macadress,
-                                                       data['UUID'])
+                        msglog = "A WOL request has been sent from the ARS %s" \
+                                 "to the mac address %s " \
+                                 "for the computer with the uuid %s" % (serverrelay['jid'],
+                                                                        macadress,
+                                                                        data['UUID'])
                         historymessage(xmppobject, sessionid, msglog)
                         logger.debug(msglog)
             else:
                 raise
         else:
-            # local WOL
             if 'macadress' in data:
                 wol.send_magic_packet(data['macadress'],
                                       port=xmppobject.wakeonlanport)
-                msglog = "local lan WOL for mac "\
-                         "address %s - [port %s]" % ( data['macadress'],
-                                                      xmppobject.wakeonlanport)
+                msglog = "A local lan WOL request have been sent to the" \
+                         " mac address %s and port %s" % (data['macadress'],
+                                                          xmppobject.wakeonlanport)
                 historymessage(xmppobject, sessionid, msglog)
                 logger.debug(msglog)
 
@@ -113,16 +112,17 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
                         continue
                     wol.send_magic_packet(macadress,
                                           port=xmppobject.wakeonlanport)
-                    msglog = "local lan WOL for mac "\
-                              "address %s - [port %s]" % ( macadress,
-                                                           xmppobject.wakeonlanport)
+                    msglog = "A local lan WOL request have been sent to the" \
+                             " mac address %s and port %s" % (macadress,
+                                                              xmppobject.wakeonlanport)
                     historymessage(xmppobject, sessionid, msglog)
                     logger.debug(msglog)
-    except:
-        msglog = "Error plugin plugin_wakeonlan %s" % data
+    except Exception as error_exception:
+        msglog = "An error occurent when loading the plugin plugin_wakeonlan %s" % data
         tracebackerror= "\n%s" % (traceback.format_exc())
         logger.error("%s"%(tracebackerror))
         logger.error(msglog)
+        logger.error("The exception raised is %s" % error_exception)
         historymessage(xmppobject,
                        sessionid,
                        "%s\ndetail error:\n%s"%(msglog,
@@ -145,37 +145,32 @@ def historymessage(xmppobject, sessionid, msg):
 
 
 def read_conf_wol(xmppobject):
+    """
+        This function read the configuration file for the wol plugin.
+        The configuration file should be like:
+        [parameters]
+        remotelan = True
+        # wakeonlanport using only for remotelan is False
+        wakeonlanport = 9
+    """
+
     namefichierconf = plugin['NAME'] + ".ini"
     pathfileconf = os.path.join( xmppobject.config.pathdirconffile, namefichierconf )
     logger.debug("fichier de configuration is %s" % pathfileconf)
     xmppobject.wakeonlanremotelan = True
     xmppobject.wakeonlanport = 9
     if not os.path.isfile(pathfileconf):
-        logger.error("plugin %s\nConfiguration file :\n" \
-                     "\t%s missing\n" \
-                     "eg conf:\n[wakeonlan]\n" \
-                     "remotelan = True\n" \
-                     "# wakeonlanport using only for remotelan is False\n" \
-                     "wakeonlanport = 9"%(plugin['NAME'],
-                                          pathfileconf))
-        logger.warning("Configuration default :\n\t\tdefault value for \"remotelan\" is True\n"\
-                       "\t\tdefault value for \"wakeonlanport\" is 9 (only if remotelan is False)\n")
+        logger.error("The configuration file for the plugin %s is missing.\n" \
+                     "It should be located to %s)" % (plugin['NAME'], pathfileconf))
     else:
         Config = ConfigParser.ConfigParser()
         Config.read(pathfileconf)
         if os.path.exists(pathfileconf + ".local"):
             Config.read(pathfileconf + ".local")
 
-        if Config.has_option("wakeonlan", "remotelan"):
-            xmppobject.wakeonlanremotelan = Config.getboolean('wakeonlan', 'remotelan')
+        if Config.has_option("parameters", "remotelan"):
+            xmppobject.wakeonlanremotelan = Config.getboolean('parameters', 'remotelan')
 
         if not xmppobject.wakeonlanremotelan:
-            if Config.has_option("wakeonlan", "wakeonlanport"):
-                xmppobject.wakeonlanport = Config.getint('wakeonlan', 'wakeonlanport')
-        logger.debug("plugin %s\nfile name : %s\n" \
-                         "\tConfiguration parameters is :\n" \
-                         "\t\t\"remotelan\" is %s\n"\
-                         "\t\t\"wakeonlanport\" is %s" % (plugin['NAME'],
-                                                          pathfileconf,
-                                                          xmppobject.wakeonlanremotelan,
-                                                          xmppobject.wakeonlanport))
+            if Config.has_option("parameters", "wakeonlanport"):
+                xmppobject.wakeonlanport = Config.getint('parameters', 'wakeonlanport')

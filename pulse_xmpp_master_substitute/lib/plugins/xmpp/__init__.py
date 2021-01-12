@@ -4293,7 +4293,7 @@ class XmppMasterDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def listMacAdressforMachine(self, session, id_machine, infomac=False):
         try:
-            sql = """SELECT 
+            sql = """SELECT
                         GROUP_CONCAT(DISTINCT mac ORDER BY mac ASC  SEPARATOR ',') AS listmac
                     FROM
                         xmppmaster.network

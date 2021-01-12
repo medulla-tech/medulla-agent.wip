@@ -77,8 +77,9 @@ def action( objectxmpp, action, sessionid, data, message, dataerreur):
         dataerreur["action"] = "result" + startupdate["action"]
         dataerreur["data"] = {"msg": "error plugin: "+ startupdate["action"]}
         dataerreur["ret"] = 255
-        logger.error("from plugin_start call %s differed %s" % (pluginstart, objectxmpp.time_differed_start))
-        params ={ "descriptor" : startupdate,
+        logger.warning("from plugin_start call %s differed %s" % (pluginstart,
+                                                                  objectxmpp.time_differed_start))
+        params = {"descriptor" : startupdate,
                   "errordescriptor" : dataerreur,
                   "msg" : msg}
         objectxmpp.paramsdict.append(params)
