@@ -97,7 +97,7 @@ class manageschedulerdeploy:
                 logger.error("An error occured while opening the bsddb database: %s" % self.name_basesession)
                 os.remove(self.name_basesession)
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
-             except Exception as error:
+            except Exception as error:
                 logger.error("Opening the bsddb database failed with the error \n %s" % error)
 
     def closebase(self):
@@ -123,7 +123,7 @@ class manageschedulerdeploy:
             else:
                 self.dbsessionscheduler[sessionid] = objsession
                 self.dbsessionscheduler.sync()
-        except Exceptionas exception_error:
+        except Exception as exception_error:
             logger.error("In the function set_sesionscheduler the plugin %s failed with the error: \n %s" % (self.name_basesession, exception_error))
         finally:
             self.closebase()
