@@ -28,13 +28,13 @@ from lib import utils
 
 plugin = {"VERSION": "1.1", "NAME": "scheduling_wsusscn2", "TYPE": "relayserver", "SCHEDULED": True}
 
-# nb  -1 infinie
-# all tuesday at 22h30
+# nb  -1 infinite
+# all tuesday at 10h30PM
 SCHEDULE = {"schedule" : "30 22 * * 2", "nb" : -1}
 
 def schedule_main(objectxmpp):
-    """ install
-        # donwnload ffile Wsusscn2.cab
+    """
+        Download Wsusscn2.cab file
     """
     print "*******************************************"
     print "*******************************************"
