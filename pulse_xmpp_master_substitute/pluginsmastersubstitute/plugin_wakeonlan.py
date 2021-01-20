@@ -33,7 +33,6 @@ import ConfigParser
 from wakeonlan import wol
 
 logger = logging.getLogger()
-# plugin run wake on lan on mac adress
 
 plugin = {"VERSION": "1.1", "NAME": "wakeonlan", "TYPE": "master"}
 
