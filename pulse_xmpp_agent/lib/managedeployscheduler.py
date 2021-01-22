@@ -90,6 +90,8 @@ class manageschedulerdeploy:
                 self.dbcmdscheduler     = bsddb.btopen(self.name_basecmd , 'c')
             except Exception as error:
                 logger.error("Opening the bsddb database failed with the error \n %s" % error)
+                os.remove(self.name_basecmd)
+                self.dbcmdscheduler     = bsddb.btopen(self.name_basecmd , 'c')
 
             try:
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
@@ -99,6 +101,9 @@ class manageschedulerdeploy:
                 self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
             except Exception as error:
                 logger.error("Opening the bsddb database failed with the error \n %s" % error)
+                os.remove(self.name_basecmd)
+                self.dbsessionscheduler = bsddb.btopen(self.name_basesession , 'c')
+
 
     def closebase(self):
         self.dbcmdscheduler.close()
