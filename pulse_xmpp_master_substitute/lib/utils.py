@@ -72,7 +72,6 @@ if sys.platform.startswith('win'):
     from win32com.client import GetObjectif
     import ctypes
     from ctypes.wintypes import LPCWSTR, LPCSTR, WinError
-
 if sys.platform.startswith('linux'):
     import pwd
     import grp
