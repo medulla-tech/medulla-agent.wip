@@ -158,6 +158,25 @@ class Syncthing_machine(Base, XmppMasterDBObj):
     fk_arscluster = Column(Integer, ForeignKey('syncthing_ars_cluster.id'), nullable=False)
     syncthing_ars_cluster = relationship(Syncthing_ars_cluster)
 
+
+class Glpi_entity(Base, XmppMasterDBObj):
+    # ====== Table name =========================
+    __tablename__ = 'glpi_entity'
+    # ====== Fields =============================
+    # Here we define columns for the table machines.
+    # Notice that each column is also a normal Python instance attribute.
+    # id = Column(Integer, primary_key=True)
+    glpi_entity_path = Column(String(512), nullable=False)
+
+class Glpi_location(Base, XmppMasterDBObj):
+    # ====== Table name =========================
+    __tablename__ = 'glpi_location'
+    # ====== Fields =============================
+    # Here we define columns for the table machines.
+    # Notice that each column is also a normal Python instance attribute.
+    # id = Column(Integer, primary_key=True)
+    glpi_location_path = Column(String(512), nullable=False)
+
 class Machines(Base, XmppMasterDBObj):
     # ====== Table name =========================
     __tablename__ = 'machines'
@@ -186,7 +205,19 @@ class Machines(Base, XmppMasterDBObj):
     ad_ou_user = Column(Text)
     kiosk_presence = Column(Enum('False', 'True'))
     lastuser = Column(String(45))
-    keysyncthing = Column(String(70), default="")
+    keysyncthing = Column(String(70), default="")="")
+    glpi_owner_firstname = Column(String(45), default="")
+    glpi_owner_realname = Column(String(45), default="")
+    glpi_owner = Column(String(45), default="")
+    model = Column(String(45), default="")
+    manufacturer = Column(String(45), default="")
+    json_reg = Column(String(1024), default="")
+    # ====== ForeignKey =============================
+    # machines_id = Column(Integer, nullable=False)
+    glpi_entity_id = Column(Integer, ForeignKey('glpi_entity.id'))
+    glpi_entity = relationship(Glpi_entity)
+    glpi_location_id = Column(Integer, ForeignKey('glpi_location.id'))
+    glpi_location = relationship(Glpi_location)
 
 class Network(Base, XmppMasterDBObj):
     # ====== Table name =========================
