@@ -100,15 +100,6 @@ class DomainestatusDeviceError(Error):
         return "{0} {1}".format(self.__doc__, Exception.__str__(self))
 
 
-class DomainestatusDeviceError(Error):
-    """
-        status is not in domaine 'ready', 'busy', 'warning', 'error'
-    """
-
-    def __str__(self):
-        return "{0} {1}".format(self.__doc__, Exception.__str__(self))
-
-
 class Singleton(object):
 
     def __new__(type, *args):
@@ -4368,6 +4359,13 @@ class XmppMasterDatabase(DatabaseHelper):
         except Exception, e:
             logging.getLogger().error(str(e))
         return updatedb
+
+
+
+
+
+
+
 
     @DatabaseHelper._sessionm
     def updateMachinejidGuacamoleGroupdeploy(self, session, jid, urlguacamole, groupdeploy, idmachine):
