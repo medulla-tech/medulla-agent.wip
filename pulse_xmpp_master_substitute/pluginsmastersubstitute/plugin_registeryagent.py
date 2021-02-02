@@ -776,6 +776,16 @@ def getMachineByUuidSetup( uuidsetupmachine, showinfobool=True):
             logger.debug("machine for setup uuid machine %s" %machine_result)
     return machine_result
 
+def getMachineInformationByUuidSetup( uuidsetupmachine, showinfobool=True):
+    if uuidsetupmachine is None or uuidsetupmachine == "":
+        logger.warning("Setup uuid machine missing in inventory xmpp")
+        return {}
+    machine_result=Glpi().getMachineInformationByUuidSetup(uuidsetupmachine)
+    if showinfobool:
+        if machine_result:
+            logger.debug("machine for setup uuid machine %s" %machine_result)
+    return machine_result
+
 def callInstallConfGuacamole(xmppobject, torelayserver, data, showinfobool=True):
     if 'remoteservice' in data and len(data['remoteservice']) > 0:
         try:
@@ -853,11 +863,6 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
     btestfindcomputer = False
     machineglpiid = -1
 
-
-    logger.warning("***** test_consolidation_inventory")
-
-
-
     if data['uuid_serial_machine'] != "":
         #cherche machine in glpi on uuid_setup
         if showinfobool:
@@ -868,13 +873,13 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
 
     if data['uuid_serial_machine'] != "":
         #cherche machine in glpi on uuid_setup
-        setupuuid = getMachineByUuidSetup(data['uuid_serial_machine'],
+        setupuuid = getMachineInformationByUuidSetup(data['uuid_serial_machine'],
                                             showinfobool)
 
         if setupuuid:
             # structure machine de glpi_computer table pour uuid setup .data['uuid_serial_machine']
             # on a 1 setup uuid on consolide xmpp et glpi sur uuid_serial_machine
-            uuid = 'UUID' + str(setupuuid['id'])
+            uuid = 'UUID' + str(setupuuid['data']['id'][0])
             if showinfobool:
                 logger.info("** Calling updateMachineidinventory uuid %s " \
                     "for machine %s setup uuid %s" % (uuid,
@@ -883,11 +888,11 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
             XmppMasterDatabase().updateMachineidinventory(uuid,
                                                             idmachine)
             btestfindcomputer=True
-            machineglpiid = setupuuid['id']
+            machineglpiid = setupuuid['data']['id'][0]
             if showinfobool:
                 logger.info("Machine %s : Finding computer id [%s] from GLPI," \
-                    " for UUID SETUP MACHINE %s" % (setupuuid['name'],
-                                                    setupuuid['id'],
+                    " for UUID SETUP MACHINE %s" % (setupuuid['data']['name'][0],
+                                                    setupuuid['data']['id'][0],
                                                     data['uuid_serial_machine']))
     else:
         if showinfobool:
