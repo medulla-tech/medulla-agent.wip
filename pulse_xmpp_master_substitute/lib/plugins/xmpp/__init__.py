@@ -834,6 +834,208 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error(str(e))
             logging.getLogger().debug("qa_custom_command error")
             return -1
+            return -1
+
+    @DatabaseHelper._sessionm
+    def update_Glpi_entity( self,
+                           session,
+                           glpi_id,
+                           complete_name = None,
+                           name = None):
+        result_entity = session.query(Glpi_entity).filter( Glpi_entity.glpi_id == glpi_id ).one()
+        if result_entity:
+            if complete_name is not None:
+                result_entity.complete_name = complete_name
+            if name is not None:
+                result_entity.name = name
+            session.commit()
+            session.flush()
+            return result_entity.get_data()
+        else:
+            logging.getLogger().debug("id entity no exist for update")
+            return {}
+
+    @DatabaseHelper._sessionm
+    def update_Glpi_location( self,
+                           session,
+                           glpi_id,
+                           complete_name = None,
+                           name = None):
+        result_location = session.query(Glpi_location).filter( Glpi_location.glpi_id == glpi_id ).one()
+        if result_location:
+            if complete_name is not None:
+                result_location.complete_name = complete_name
+            if name is not None:
+                result_location.name = name
+            session.commit()
+            session.flush()
+            return result_location.get_data()
+        else:
+            logging.getLogger().debug("id location no exist for update")
+            return {}
+
+    @DatabaseHelper._sessionm
+    def get_Glpi_entity( self,
+                         session,
+                         glpi_id):
+        #logging.getLogger().error("get_Glpi_entity")
+        try:
+            result_entity = session.query(Glpi_entity).filter( Glpi_entity.glpi_id == glpi_id ).one()
+            session.commit()
+            session.flush()
+            if result_entity:
+               return result_entity.get_data()
+        except Exception, e:
+            logging.getLogger().error("Glpi_entity id : %s is not exist" % glpi_id)
+        return None
+
+    @DatabaseHelper._sessionm
+    def get_Glpi_location( self,
+                         session,
+                         glpi_id):
+
+        #logging.getLogger().error("get_Glpi_location")
+        try:
+            result_location = session.query(Glpi_location).filter( Glpi_location.glpi_id == glpi_id ).one()
+            session.commit()
+            session.flush()
+            if result_location:
+               return result_location.get_data()
+        except Exception, e:
+            logging.getLogger().error("Glpi_location id : %s is not exist" % glpi_id)
+        return None
+
+    @DatabaseHelper._sessionm
+    def create_Glpi_entity( self,
+                            session,
+                            complete_name,
+                            name,
+                            glpi_id):
+        """
+            create Glpi_entity
+        """
+        if glpi_id is None or glpi_id == '':
+            return None
+        ret = self.get_Glpi_entity(glpi_id)
+        if ret is None:
+            # creation de cette entity
+            try:
+                # creation si cette entite n'existe pas.
+                new_glpi_entity = Glpi_entity()
+                new_glpi_entity.complete_name = complete_name
+                new_glpi_entity.name = name
+                new_glpi_entity.glpi_id = glpi_id
+                session.add(new_glpi_entity)
+                session.commit()
+                session.flush()
+                return new_glpi_entity.get_data()
+            except Exception, e:
+                logging.getLogger().error(str(e))
+                logging.getLogger().error("glpi_entity error")
+                return None
+        else:
+            # verify coherence
+            if ret['name'] == name and ret['complete_name'] == complete_name:
+                return ret
+            else:
+                # update entity
+                logging.getLogger().warning("update entity exist")
+                return self.update_Glpi_entity(glpi_id,
+                                        complete_name,
+                                        name)
+        return None
+
+    @DatabaseHelper._sessionm
+    def create_Glpi_location( self,
+                            session,
+                            complete_name,
+                            name,
+                            glpi_id):
+        """
+            create Glpi_location
+        """
+        if glpi_id is None or glpi_id == '':
+            return None
+        ret = self.get_Glpi_location(glpi_id)
+        if ret is None:
+            # creation de cette location
+            try:
+                # creation si cette entite n'existe pas.
+                new_glpi_location = Glpi_location()
+                new_glpi_location.complete_name = complete_name
+                new_glpi_location.name = name
+                new_glpi_location.glpi_id = glpi_id
+                session.add(new_glpi_location)
+                session.commit()
+                session.flush()
+                return new_glpi_location.get_data()
+            except Exception, e:
+                logging.getLogger().error(str(e))
+                logging.getLogger().error("glpi_location error")
+                return None
+        else:
+            # verify coherence
+            if ret['name'] == name and ret['complete_name'] == complete_name:
+                return ret
+            else:
+                # update location
+                logging.getLogger().warning("update location exist")
+                return self.update_Glpi_location(glpi_id,
+                                        complete_name,
+                                        name)
+        return None
+
+    @DatabaseHelper._sessionm
+    def updateMachineGlpiInformationInventory(self, session, glpiinformation, idmachine):
+        logging.getLogger().debug("jfk glpiinformation %s" % glpiinformation)
+        retentity = self.create_Glpi_entity(glpiinformation['data']['complete_entity'][0],
+                                      glpiinformation['data']['entity'][0],
+                                      glpiinformation['data']['entity_glpi_id'][0])
+        if retentity is None:
+            entity_id_xmpp = "NULL"
+        else:
+            entity_id_xmpp = retentity['id']
+
+        retlocation = self.create_Glpi_location(glpiinformation['data']['complete_location'][0],
+                                      glpiinformation['data']['location'][0],
+                                      glpiinformation['data']['location_glpi_id'][0])
+        if retlocation is None:
+            location_id_xmpp = "NULL"
+        else:
+            location_id_xmpp = retlocation['id']
+
+        updatedb=-1
+        try:
+            sql = '''
+                UPDATE `machines`
+                SET
+                    `uuid_inventorymachine` = '%s',
+                    `glpi_description`  = '%s',
+                    `glpi_owner_firstname` = '%s',
+                    `glpi_owner_realname` = '%s',
+                    `glpi_owner` = '%s',
+                    `model` = '%s',
+                    `manufacturer` = '%s',
+                    `glpi_entity_id` = %s,
+                    `glpi_location_id` = %s
+                WHERE
+                    `id` = '%s';''' % ("UUID%s" % glpiinformation['data']['uuidglpicomputer'][0],
+                                    glpiinformation['data']['description'][0],
+                                    glpiinformation['data']['owner_firstname'][0],
+                                    glpiinformation['data']['owner_realname'][0],
+                                    glpiinformation['data']['owner'][0],
+                                    glpiinformation['data']['model'][0],
+                                    glpiinformation['data']['manufacturer'][0],
+                                    entity_id_xmpp,
+                                    location_id_xmpp,
+                                    idmachine)
+            updatedb = session.execute(sql)
+            # update entity information
+            session.commit()
+            session.flush()
+        except Exception, e:
+            logging.getLogger().error(str(e))
+        return updatedb
 
     @DatabaseHelper._sessionm
     def updateName_Qa_custom_command(self,
@@ -4359,13 +4561,6 @@ class XmppMasterDatabase(DatabaseHelper):
         except Exception, e:
             logging.getLogger().error(str(e))
         return updatedb
-
-
-
-
-
-
-
 
     @DatabaseHelper._sessionm
     def updateMachinejidGuacamoleGroupdeploy(self, session, jid, urlguacamole, groupdeploy, idmachine):
