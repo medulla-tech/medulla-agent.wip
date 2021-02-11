@@ -159,6 +159,7 @@ class Syncthing_machine(Base, XmppMasterDBObj):
     syncthing_ars_cluster = relationship(Syncthing_ars_cluster)
 
 
+
 class Glpi_entity(Base, XmppMasterDBObj):
     # ====== Table name =========================
     __tablename__ = 'glpi_entity'
@@ -202,32 +203,6 @@ class Glpi_location(Base, XmppMasterDBObj):
                }
 
 
-class Glpi_Register_Keys(Base, XmppMasterDBObj):
-    # ====== Table name =========================
-    __tablename__ = 'glpi_register_keys'
-    # ====== Fields =============================
-    # Here we define columns for the table machines.
-    # Notice that each column is also a normal Python instance attribute.
-    # id = Column(Integer, primary_key=True)
-    name = Column(String(90), nullable=False)
-    value = Column(String(90), nullable=False)
-    comment =  Column(String(90))
-    # ====== ForeignKey =============================
-    machines_id = Column(Integer, ForeignKey('machines.id'))
-    machines = relationship(Machines)
-
-    def __repr__(self):
-        return "<register_keys('%s','%s', '%s', '%s')>" % (self.name, self.value, self.comment, self.machines_id)
-
-    def get_data(self):
-        return{ 'id' : self.id,
-                'name' : self.name,
-                'value' : self.value,
-                'comment' : self.comment,
-                'machines_id' : self.machines_id
-               }
-
-
 class Machines(Base, XmppMasterDBObj):
     # ====== Table name =========================
     __tablename__ = 'machines'
@@ -263,15 +238,40 @@ class Machines(Base, XmppMasterDBObj):
     glpi_owner = Column(String(45), default="")
     model = Column(String(45), default="")
     manufacturer = Column(String(45), default="")
-    json_reg = Column(String(1024), default="")
     # ====== ForeignKey =============================
     # machines_id = Column(Integer, nullable=False)
     glpi_entity_id = Column(Integer, ForeignKey('glpi_entity.id'))
     glpi_entity = relationship(Glpi_entity)
     glpi_location_id = Column(Integer, ForeignKey('glpi_location.id'))
     glpi_location = relationship(Glpi_location)
-    glpi_regkey_id = Column(Integer, ForeignKey('glpi_register_keys.id'))
-    glpi_register_keys = relationship(Glpi_Register_Keys)
+
+
+class Glpi_Register_Keys(Base, XmppMasterDBObj):
+    # ====== Table name =========================
+    __tablename__ = 'glpi_register_keys'
+    # ====== Fields =============================
+    # Here we define columns for the table machines.
+    # Notice that each column is also a normal Python instance attribute.
+    # id = Column(Integer, primary_key=True)
+    name = Column(String(90), nullable=False)
+    value = Column(String(90), nullable=False)
+    comment =  Column(String(90))
+    # ====== ForeignKey =============================
+    machines_id = Column(Integer, ForeignKey('machines.id'))
+    machines = relationship(Machines)
+
+    def __repr__(self):
+        return "<register_keys('%s','%s', '%s', '%s')>" % (self.name, self.value, self.comment, self.machines_id)
+
+    def get_data(self):
+        return{ 'id' : self.id,
+                'name' : self.name,
+                'value' : self.value,
+                'comment' : self.comment,
+                'machines_id' : self.machines_id
+               }
+
+
 
 class Network(Base, XmppMasterDBObj):
     # ====== Table name =========================

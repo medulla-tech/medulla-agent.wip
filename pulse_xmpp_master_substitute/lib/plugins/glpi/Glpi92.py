@@ -656,6 +656,14 @@ class Glpi92(DatabaseHelper):
                     ret[q[2]] = [q[1], q[2], q[3], listid]
         return ret
 
+    def getMachineInformationByUuidSetup(self, uuidsetupmachine):
+        """ @return: all computers that have this uuid setup machine """
+        return self.get_machines_list(0, 0, {'uuidsetup' : uuidsetupmachine})
+
+    def getMachineInformationByUuidMachine(self, glpi_uuid):
+        """ @return: all computers that have this uuid  machine """
+        return self.get_machines_list(0, 0, {'idmachine' : glpi_uuid})
+
     def __getRestrictedComputersListQuery(self, ctx, filt = None, session = create_session(), displayList = False, count = False):
         """
         Get the sqlalchemy query to get a list of computers with some filters
@@ -3858,13 +3866,10 @@ class Glpi92(DatabaseHelper):
 
         """
         # start and end are used to set the limit parameter in the query
-        for _ in range(2): logger.error("JFK ******* self.config.arraykeys %s" % self.config.arraykeys)
-
         start = int(start)
         end = int(end)
         list_reg_columns_name = [regkey.split("|")[0].split("\\")[-1] \
                         for regkey in self.config.arraykeys]
-        for _ in range(2): logger.error("list_reg_columns_name %s" % list_reg_columns_name)
         uuidsetup = ctx['uuidsetup'] if "uuidsetup" in ctx else ""
         idmachine = ctx['idmachine'].replace("UUID", "") if "idmachine" in ctx else ""
         # "location" filter is corresponding to the entity selection in the interface
@@ -3887,7 +3892,6 @@ class Glpi92(DatabaseHelper):
             .outerjoin(self.manufacturers, Machine.manufacturers_id == self.manufacturers.c.id)\
             .join(self.glpi_computermodels, Machine.computermodels_id == self.glpi_computermodels.c.id)\
             .outerjoin(self.regcontents, Machine.id == self.regcontents.c.computers_id)
-
         if field != "":
             query = query.join(Computersitems, Machine.id == Computersitems.computers_id)
             if field != "type":
@@ -3899,7 +3903,6 @@ class Glpi92(DatabaseHelper):
         query = query.add_column(Machine.name.label("cn"))
         if uuidsetup != "" or idmachine != "":
             query = query.add_column(Machine.uuid.label("uuid_setup"))
-
         # if idmachine est definie ou setupuuid alors recuperation de tout les champs.
         if 'os' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.os.c.name.label("os")).join(self.os)
@@ -3929,6 +3932,8 @@ class Glpi92(DatabaseHelper):
 
         if 'location' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.locations.c.name.label("location"))
+            query = query.add_column(self.locations.c.completename.label("complete_location"))
+            query = query.add_column(self.locations.c.id.label("location_glpi_id"))
 
         if 'model' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.model.c.name.label("model"))
@@ -4063,7 +4068,6 @@ class Glpi92(DatabaseHelper):
 
             for column in list_reg_columns_name:
                 result['data']['reg'][column].append(None)
-
 
         regquery = session.query(
             self.regcontents.c.computers_id,

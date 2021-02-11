@@ -139,6 +139,10 @@ class Glpi(object):
         global glpi
         return glpi.getMachineInformationByUuidSetup(uuidsetupmachine)
 
+    def getMachineInformationByUuidMachine(self, idmachine):
+        global glpi
+        return glpi.getMachineInformationByUuidMachine(idmachine)
+
     def machineobjectdymresult(self, ret):
         global glpi
         return glpi._machineobjectdymresult(ret)

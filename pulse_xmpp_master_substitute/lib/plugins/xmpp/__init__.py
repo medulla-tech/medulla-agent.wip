@@ -52,7 +52,10 @@ from lib.plugins.xmpp.schema import Network, Machines, RelayServer, Users, Regle
     Mon_device_service, \
     Mon_rules, \
     Mon_event, \
-    Mon_panels_template
+    Mon_panels_template, \
+    Glpi_entity, \
+    Glpi_location, \
+    Glpi_Register_Keys
 # Imported last
 import logging
 import json
@@ -986,8 +989,12 @@ class XmppMasterDatabase(DatabaseHelper):
         return None
 
     @DatabaseHelper._sessionm
-    def updateMachineGlpiInformationInventory(self, session, glpiinformation, idmachine):
-        logging.getLogger().debug("jfk glpiinformation %s" % glpiinformation)
+    def updateMachineGlpiInformationInventory(self,
+                                              session,
+                                              glpiinformation,
+                                              idmachine,
+                                              data):
+        #logging.getLogger().warning("data %s" % data)
         retentity = self.create_Glpi_entity(glpiinformation['data']['complete_entity'][0],
                                       glpiinformation['data']['entity'][0],
                                       glpiinformation['data']['entity_glpi_id'][0])
@@ -995,7 +1002,7 @@ class XmppMasterDatabase(DatabaseHelper):
             entity_id_xmpp = "NULL"
         else:
             entity_id_xmpp = retentity['id']
-
+    
         retlocation = self.create_Glpi_location(glpiinformation['data']['complete_location'][0],
                                       glpiinformation['data']['location'][0],
                                       glpiinformation['data']['location_glpi_id'][0])
@@ -1003,12 +1010,17 @@ class XmppMasterDatabase(DatabaseHelper):
             location_id_xmpp = "NULL"
         else:
             location_id_xmpp = retlocation['id']
-
+        if 'win' in data['information']['info']['platform'].lower():
+            for regwindokey in glpiinformation['data']['reg']:
+                if glpiinformation['data']['reg'][regwindokey][0] is not None:
+                    self.create_Glpi_register_keys( idmachine,
+                                                    regwindokey,
+                                                    value=glpiinformation['data']['reg'][regwindokey][0])
         updatedb=-1
         try:
             sql = '''
-                UPDATE `machines`
-                SET
+                UPDATE `machines` 
+                SET 
                     `uuid_inventorymachine` = '%s',
                     `glpi_description`  = '%s',
                     `glpi_owner_firstname` = '%s',
@@ -1029,6 +1041,7 @@ class XmppMasterDatabase(DatabaseHelper):
                                     entity_id_xmpp,
                                     location_id_xmpp,
                                     idmachine)
+            #logging.getLogger().debug("sql %s" % sql)
             updatedb = session.execute(sql)
             # update entity information
             session.commit()
@@ -1320,6 +1333,7 @@ class XmppMasterDatabase(DatabaseHelper):
                         'uuid_serial_machine' : machine.uuid_serial_machine}
         return result
 
+
     @DatabaseHelper._sessionm
     def addPresenceMachine(self,
                            session,
@@ -1342,7 +1356,18 @@ class XmppMasterDatabase(DatabaseHelper):
                            kiosk_presence="False",
                            lastuser="",
                            keysyncthing="",
-                           uuid_serial_machine=""):
+                           uuid_serial_machine="",
+                           glpi_description="",
+                           glpi_owner_firstname="",
+                           glpi_owner_realname="",
+                           glpi_owner="",
+                           model="",
+                           manufacturer="",
+                           glpi_entity_id=None,
+                           glpi_location_id=None):
+        
+        if uuid_inventorymachine is None:
+            uuid_inventorymachine = ""
         msg ="Create Machine"
         pe = -1
         if uuid_serial_machine != "":
@@ -1467,6 +1492,14 @@ class XmppMasterDatabase(DatabaseHelper):
                 new_machine.kiosk_presence = kiosk_presence
                 new_machine.lastuser = lastuser
                 new_machine.keysyncthing = keysyncthing
+                new_machine.glpi_description = glpi_description
+                new_machine.glpi_owner_firstname = glpi_owner_firstname
+                new_machine.glpi_owner_realname = glpi_owner_realname
+                new_machine.glpi_owner = glpi_owner
+                new_machine.model = model
+                new_machine.manufacturer = manufacturer
+                new_machine.glpi_entity_id = glpi_entity_id
+                new_machine.glpi_location_id = glpi_location_id
                 new_machine.enabled = '1'
                 new_machine.uuid_serial_machine = uuid_serial_machine
                 session.add(new_machine)
