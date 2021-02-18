@@ -23,6 +23,7 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	dh_auto_install
+	wget https://github.com/syncthing/syncthing/releases/download/v1.1.0/syncthing-windows-amd64-v1.1.0.zip
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib/python2.7/dist-packages/pulse_xmpp_agent
 	cp -fr pulse_xmpp_agent/* $(CURDIR)/debian/tmp/usr/lib/python2.7/dist-packages/pulse_xmpp_agent
 	rm -fr $(CURDIR)/debian/tmp/usr/lib/python2.7/dist-packages/pulse_xmpp_agent/config
