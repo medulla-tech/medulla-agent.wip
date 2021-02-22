@@ -260,6 +260,7 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
                                                                                   machine['groupdeploy'],
                                                                                   machine['id'])
                     # on regarde si le UUID associe a hostname machine correspond au hostname dans glpi.
+                    # on fait cette verification si patametre config check_uuidinventory est vrai
                     if xmppobject.check_uuidinventory and \
                         'uuid_inventorymachine' in machine and \
                             machine['uuid_inventorymachine'] is not None:
@@ -270,6 +271,7 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
                             logger.info("Searching for incoherences between " \
                                         "xmpp and glpi for uuid %s : " % machine['uuid_inventorymachine'])
                         try:
+                            # todo utilisation d'une requette plus light.
                             ret = Glpi().getLastMachineInventoryFull(machine['uuid_inventorymachine'])
                             for t in ret:
                                 if t[0] == 'name':
@@ -305,22 +307,22 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
                         machine['uuid_inventorymachine'] is None or \
                         not machine['uuid_inventorymachine']:
                         if data['agenttype'] != "relayserver":
-                            results = result[0].split(",")
-                            nbelt = len (results)
-                            results = set(results)
-                            nbelt1 = len(results)
+                            listmacadress = result[0].split(",")
+                            nbelt = len (listmacadress)
+                            listmacadress = set(listmacadress)
+                            nbelt1 = len(listmacadress)
                             if nbelt != nbelt1:
                                 if showinfobool:
                                     logger.warning("%s duplicate in the network table "\
                                                    "for machine [%s] id %s" % (nbelt-nbelt1, data['from'], machine['id']))
                                     logger.warning("Mac address list (without duplicate)"\
-                                                   " for machine %s : %s" % (machine['id'], results))
+                                                   " for machine %s : %s" % (machine['id'], listmacadress))
                                 else:
                                     logger.debug("Mac address list for machine %s : %s" % (machine['id'],
-                                                                                           results))
-                            results = result[0].split(",")
+                                                                                           listmacadress))
+                            listmacadress = result[0].split(",")
                             if showinfobool:
-                                logger.info("Mac address list for machine %s : %s" % (machine['id'], results))
+                                logger.info("Mac address list for machine %s : %s" % (machine['id'], listmacadress))
                             uuid = ''
                             btestfindcomputer = False
                             # for testinventaireremonte in range(20):
@@ -960,8 +962,6 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
                     logger.info("** Calling updateMachineidinventory uuid %s for machine %s id %s" % (uuid,
                                                                                                     msg['from'],
                                                                                                     idmachine))
-
-
                 setupuuid = getMachineInformationByUuidMachine(uuid, showinfobool=True)
                 if setupuuid:
                     logger.info("setupuuid %s" % setupuuid)
@@ -989,7 +989,6 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
                 if showinfobool:
                     logger.info("No computer found for mac address %s for machine %s" % (t,msg['from']))
     return btestfindcomputer , machineglpiid
-
 
 def get_packages_for_machine(machine, showinfobool=True):
     """

@@ -158,8 +158,6 @@ class Syncthing_machine(Base, XmppMasterDBObj):
     fk_arscluster = Column(Integer, ForeignKey('syncthing_ars_cluster.id'), nullable=False)
     syncthing_ars_cluster = relationship(Syncthing_ars_cluster)
 
-
-
 class Glpi_entity(Base, XmppMasterDBObj):
     # ====== Table name =========================
     __tablename__ = 'glpi_entity'

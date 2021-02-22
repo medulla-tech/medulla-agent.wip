@@ -59,6 +59,8 @@ from distutils.version import LooseVersion
 from lib.configuration import confParameter
 from lib.plugins.xmpp import XmppMasterDatabase
 
+logger = logging.getLogger()
+
 class Singleton(object):
 
     def __new__(type, *args):
@@ -655,6 +657,13 @@ class Glpi92(DatabaseHelper):
                     listid = XmppMasterDatabase().getxmppmasterfilterforglpi(q)
                     ret[q[2]] = [q[1], q[2], q[3], listid]
         return ret
+
+    def getMachineByUuidSetup(self, uuidsetupmachine):
+        """ @return: all computers that have this uuid setup machine """
+        session = create_session()
+        ret = session.query(Machine).filter(Machine.uuid.like(uuidsetupmachine)).first()
+        session.close()
+        return self._machineobject(ret)
 
     def getMachineInformationByUuidSetup(self, uuidsetupmachine):
         """ @return: all computers that have this uuid setup machine """
@@ -3836,7 +3845,7 @@ class Glpi92(DatabaseHelper):
                         'users_id': ret.users_id,
                         'groups_id': ret.groups_id,
                         'states_id': ret.states_id,
-                        'ticket_tco': ret.ticket_tco,
+                        'ticket_tco': float(ret.ticket_tco),
                         'uuid': ret.uuid,
                         'date_creation': ret.date_creation,
                         'is_recursive': ret.is_recursive,
@@ -4094,13 +4103,6 @@ class Glpi92(DatabaseHelper):
         if idmachine != "" or uuidsetup != "":
             result['data']['uuidglpicomputer'] = result['data'].pop('uuid')
         return result
-
-    def getMachineByUuidSetup(self, uuidsetupmachine):
-        """ @return: all computers that have this uuid setup machine """
-        session = create_session()
-        ret = session.query(Machine).filter(Machine.uuid.like(uuidsetupmachine)).first()
-        session.close()
-        return self._machineobject(ret)
 
     def getMachineByMacAddress(self, ctx, filt):
         """ @return: all computers that have this mac address """
