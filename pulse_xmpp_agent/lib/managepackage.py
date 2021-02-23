@@ -101,6 +101,39 @@ class managepackage:
         return None
 
     @staticmethod
+    def getpathpackagebyuuid(uuidpackage):
+        for package in managepackage.listpackages():
+            try:
+                jr = managepackage.loadjsonfile(
+                    os.path.join(package, "conf.json"))
+                if 'id' in jr and jr['id'] == uuidpackage:
+
+                    logger.error("getpathpackagebyuuid %s package is %s" % (uuidpackage,
+                                                                            package))
+                    return package
+            except Exception as e:
+                logger.error("package %s missing [%s]" % (package, str(e)))
+        return None
+
+
+    @staticmethod
+    def getversionpackageuuid(packageuuid):
+        for package in managepackage.listpackages():
+            try:
+                jr = managepackage.loadjsonfile(
+                    os.path.join(package, "conf.json"))
+                if 'id' in jr and jr['id'] == packageuuid \
+                    and 'version' in jr:
+                    return jr['version']
+            except Exception as e:
+                logger.error(
+                    "package %s verify format descriptor conf.json [%s]" %
+                    (packageuuid, str(e)))
+        logger.error("package %s verify version " \
+                        "in descriptor conf.json [%s]" %(packageuuid))
+        return None
+
+    @staticmethod
     def getnamepackagefromuuidpackage(uuidpackage):
         pathpackage = os.path.join(
             managepackage.packagedir(),
