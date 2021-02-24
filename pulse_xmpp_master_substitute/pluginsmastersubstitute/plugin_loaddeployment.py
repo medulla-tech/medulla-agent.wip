@@ -430,7 +430,6 @@ def applicationdeployjsonUuidMachineAndUuidPackage(self,
                                                    wol=0):
     sessiondeployementless = name_random(5, "arsdeploy")
     msg=[]
-    name = managepackage.getnamepackagefromuuidpackage(uuidpackage)
     name = uuidpackage
     if name is not None:
         return self.applicationdeployjsonuuid(str(uuidmachine),
