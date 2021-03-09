@@ -112,7 +112,7 @@ class confParameter:
         self.levellog = 20
         if Config.has_option("global", "log_level"):
             self.levellog =  self._levellogdata(Config.get('global', 'log_level'))
-        self.log_level_sleekxmpp = 0
+        self.log_level_sleekxmpp = 50
         if Config.has_option("global", "log_level_sleekxmpp"):
             self.log_level_sleekxmpp =  self._levellogdata(Config.get('global',
                                                                           'log_level_sleekxmpp'))
@@ -158,11 +158,11 @@ class confParameter:
 
         if "pkgs" in self.plugins_list:
             self.readConfpkgs(Config)
-    
+
     def _levellogdata(self, levelstring):
         strlevel = levelstring.upper()
         if strlevel in ['CRITICAL', 'FATAL']:
-           return 50
+            return 50
         elif strlevel == 'ERROR':
             return 40
         elif strlevel in ['WARNING', 'WARN']:
@@ -173,7 +173,7 @@ class confParameter:
             return 10
         elif strlevel == 'NOTSET':
             return 0
-        elif strlevel == "LOG" or self.debug == "DEBUGPULSE":
+        elif strlevel in ['LOG', 'DEBUGPULSE']:
             return 25
         else:
             return 20

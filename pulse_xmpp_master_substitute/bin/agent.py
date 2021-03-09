@@ -68,10 +68,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
 
         ### update level log for sleekxmpp
         handler_sleekxmpp = logging.getLogger('sleekxmpp')
-        logging.log(DEBUGPULSE,"%s level log sleekxmpp is " %self.config.log_level_sleekxmpp)
+        logging.log(DEBUGPULSE,"Sleekxmpp log level is %s" %self.config.log_level_sleekxmpp)
         handler_sleekxmpp.setLevel(self.config.log_level_sleekxmpp)
 
-        logging.log(DEBUGPULSE,"start Master sub (%s)" %(self.config.jidmastersubstitute))
+        logging.log(DEBUGPULSE,"Starting Master sub (%s)" %(self.config.jidmastersubstitute))
         sleekxmpp.ClientXMPP.__init__(self, jid.JID(self.config.jidmastersubstitute), self.config.passwordconnection)
 
         ####################Update agent from MAster#############################
@@ -424,4 +424,3 @@ class MUCBot(sleekxmpp.ClientXMPP):
             logger.error("\n%s"%(traceback.format_exc()))
             return '{"err" : "%s"}' % str(e).replace('"', "'")
         return "{}"
-
