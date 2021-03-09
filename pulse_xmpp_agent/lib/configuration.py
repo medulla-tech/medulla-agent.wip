@@ -930,18 +930,18 @@ class confParameter:
            return 50
         elif strlevel == 'ERROR':
             return 40
-        elif self.debug in ['WARNING', 'WARN']:
+        elif strlevel in ['WARNING', 'WARN']:
             return 30
-        elif self.debug == 'INFO':
+        elif strlevel == 'INFO':
             return 20
-        elif self.debug == 'DEBUG':
+        elif strlevel == 'DEBUG':
             return 10
-        elif self.debug == 'NOTSET':
+        elif strlevel == 'NOTSET':
             return 0
-        elif self.debug == "LOG" or self.debug == "DEBUGPULSE":
+        elif strlevel == "LOG" or self.debug == "DEBUGPULSE":
             return 25
         else:
-            return 0o2
+            return 20
 
     def loadparametersplugins(self, namefile):
         Config = ConfigParser.ConfigParser()
