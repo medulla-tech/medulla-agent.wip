@@ -338,8 +338,17 @@ class confParameter:
         if self.agenttype == "machine":
             self.alwaysnetreconf = False
             if Config.has_option('connection', 'alwaysnetreconf'):
-                self.alwaysnetreconf = Config.getboolean('connection', 'alwaysnetreconf')
+                self.alwaysnetreconf = Config.getboolean('connection',
+                                                         'alwaysnetreconf')
 
+        #######################################################################################
+        # PKGS PARAMETERS
+        #######################################################################################
+        if self.agenttype == "relayserver":
+            self.centralizedmultiplesharing = True
+            if self.has_option("pkgs", "centralizedmultiplesharing"):
+                self.centralizedmultiplesharing = self.getboolean("pkgs",
+                                                                "centralizedmultiplesharing")
         # syncthing true or fale
         self.syncthing_on = True
         if self.agenttype == "relayserver":
@@ -638,10 +647,13 @@ class confParameter:
             logger.info('[Global] Parameter "alternativetimedelta" is %s'%self.timealternatif)
 
         try:
-            self.debug = Config.get('global', 'log_level')
+            self.levellog = self._levellogdata(Config.get('global', 'log_level'))
         except BaseException:
-            self.debug = 'NOTSET'
-        self.debug = self.debug.upper()
+            self.levellog = 0
+        try:
+            self.log_level_sleekxmpp =  self._levellogdata(Config.get('global', 'log_level_sleekxmpp'))
+        except BaseException:
+            self.log_level_sleekxmpp = 0
 
         if Config.has_option("configuration_server", "confdomain"):
             self.confdomain = Config.get('configuration_server', 'confdomain')
@@ -912,6 +924,24 @@ class confParameter:
         if Config.has_option('fileviewer', 'date_format'):
             self.date_format = Config.get('fileviewer', 'date_format')
 
+    def _levellogdata(self, levelstring):
+        strlevel = levelstring.upper()
+        if strlevel in ['CRITICAL', 'FATAL']:
+           return 50
+        elif strlevel == 'ERROR':
+            return 40
+        elif self.debug in ['WARNING', 'WARN']:
+            return 30
+        elif self.debug == 'INFO':
+            return 20
+        elif self.debug == 'DEBUG':
+            return 10
+        elif self.debug == 'NOTSET':
+            return 0
+        elif self.debug == "LOG" or self.debug == "DEBUGPULSE":
+            return 25
+        else:
+            return 0o2
 
     def loadparametersplugins(self, namefile):
         Config = ConfigParser.ConfigParser()
