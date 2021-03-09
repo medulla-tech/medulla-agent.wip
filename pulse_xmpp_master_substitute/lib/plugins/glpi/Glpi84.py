@@ -672,11 +672,6 @@ class Glpi84(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def get_machines_list(self, session, start, end, ctx):
-        """
-            this function is used for afficher the computer view based on glpi.
-            this function is used for consolidation xmpp table machine (ctx id_machine and uuidsetup
-
-        """
         # start and end are used to set the limit parameter in the query
         start = int(start)
         end = int(end)
@@ -710,11 +705,9 @@ class Glpi84(DatabaseHelper):
                 query = query.join(Peripherals, and_(Computersitems.items_id == Peripherals.id,
                                    Computersitems.itemtype == "Peripheral"))\
                     .join(Peripheralsmanufacturers, Peripherals.manufacturers_id == Peripheralsmanufacturers.id)
-        # fild always exist
         query = query.add_column(Machine.name.label("cn"))
         if uuidsetup != "" or idmachine != "":
             query = query.add_column(Machine.uuid.label("uuid_setup"))
-        # if idmachine est definie ou setupuuid alors recuperation de tout les champs.
         if 'os' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.os.c.name.label("os")).join(self.os)
 
@@ -752,7 +745,6 @@ class Glpi84(DatabaseHelper):
         if 'manufacturer' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.manufacturers.c.name.label("manufacturer"))
         if idmachine != "" or uuidsetup != "":
-            ### add couum for information
             listcolumaddforinfo = [ 'id',
                                     'entities_id',
                                     'name',
@@ -836,18 +828,15 @@ class Glpi84(DatabaseHelper):
         columns_name = [column['name'] for column in query.column_descriptions]
         machines = query.all()
 
-        # initialisation structure result
         result = {"count" : count, "data":{index : [] for index in columns_name}}
         if idmachine == "" and uuidsetup == "":
             result['data']['presence'] = []
 
         nb_columns = len(columns_name)
         if idmachine != "" or uuidsetup != "":
-            #result['data']['entity_glpi_id'] = 0 if result['data']['entity_glpi_id'] == '' else int(result['data']['entity_glpi_id'])
             result['data']['columns_name'] = columns_name
             result['data']['columns_name_reg'] = list_reg_columns_name
 
-        #initialiser 1 tableau pour chaque registerkey windows demande in configuration
         regs = {reg_column :[] for reg_column in list_reg_columns_name}
         result['data']['reg'] = regs
 
@@ -856,7 +845,6 @@ class Glpi84(DatabaseHelper):
                 result['data']['presence'].append(1 if machine[0] in online_machines else 0)
                 for indexcolum in range(nb_columns):
                     result['data'][columns_name[indexcolum]].append(machine[indexcolum])
-                    #
             else:
                 recordmachinedict = self._machineobjectdymresult(machine)
                 for recordmachine in recordmachinedict:
