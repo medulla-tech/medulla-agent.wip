@@ -38,7 +38,7 @@ class managepackage:
         This function provide the path of the package folder.
 
         @return: string: The path of the package folder.
-        """
+        """rm -rf 
         if sys.platform.startswith('linux'):
             if managepackage.agenttype == "relayserver":
                 return os.path.join("/", "var", "lib", "pulse2", "packages")
@@ -52,6 +52,55 @@ class managepackage:
                 "/opt", "Pulse", "packages")
         else:
             return None
+
+    @staticmethod
+    def search_list_package(dirpartage = None):
+        """
+            list tout les packages in les partages
+        """
+        packagelist=[]
+        if dirpartage is None:
+            dirpackage = managepackage.packagedir()
+        else:
+            dirpartage = os.path.abspath(os.path.realpath(dirpartage))
+        dirglobal = os.path.join(dirpackage,"sharing", "global")
+        packagelist = [os.path.join(dirglobal, f) for f in os.listdir(dirglobal) if len(f) == 36]
+        dirlocal  = os.path.join(dirpackage, "sharing")
+        pathnamepartage = [os.path.join(dirlocal, f) for f in os.listdir(dirlocal) if f != "global"]
+        for part in pathnamepartage:
+            filelist = [os.path.join(part, f) for f in os.listdir(part) if len(f) == 36]
+            packagelist += filelist
+        return packagelist
+
+    @staticmethod
+    def package_for_deploy_from_partage(dirpartage = None):
+        """
+            Cette fonction crée les liens symbolique pour les partages.
+        """
+        if dirpartage is None:
+            dirpackage = managepackage.packagedir()
+        else:
+            dirpartage = os.path.abspath(os.path.realpath(dirpartage))
+        for x in  managepackage.search_list_package():
+            print x , os.path.join(dirpackage, os.path.basename(x))
+            try:
+                os.symlink(x , os.path.join(dirpackage, os.path.basename(x)))
+            except OSError:
+                pass
+
+    @staticmethod
+    def del_link_symbolic(dirpackage = None):
+        """
+            Cette fonction suprime les liens symboliques cassés pour les partages.
+        """
+        if dirpackage is None:
+            dirpackage = managepackage.packagedir()
+        else:
+            dirpackage = os.path.abspath(os.path.realpath(dirpackage))
+        packagelist = [os.path.join(dirpackage, f) for f in os.listdir(dirpackage) if len(f) == 36]
+        for fi in packagelist:
+            if os.path.islink(fi) and not os.path.exists(fi):
+                os.remove(fi)
 
     @staticmethod
     def listpackages():
