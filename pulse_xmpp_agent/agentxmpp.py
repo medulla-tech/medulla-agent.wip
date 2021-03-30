@@ -2326,6 +2326,19 @@ AGENT %s ERROR TERMINATE"""%(self.boundjid.bare,
             'keysyncthing': self.deviceid,
             'uuid_serial_machine' : serialnumbermachine()
         }
+
+        # verify if  jid changed
+        jidoldinfo = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                  "INFOSTMP",
+                                  "JIDOLD")
+        if os.path.isfile(jidoldinfo):
+            loadjidold = file_get_contents(jidoldinfo).strip(" \n\r\t")
+            if self.config.jidagent != loadjidold:
+                dataobj['oldjid'] = loadjidold
+                file_put_contents(jidoldinfo, self.config.jidagent)
+        else:
+            file_put_contents(jidoldinfo, self.config.jidagent)
+
         try:
             dataobj['md5_conf_monitoring'] = ""
             # self.monitoring_agent_config_file
