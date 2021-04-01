@@ -148,6 +148,7 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
                         logger.info("Deleting machine %s in machines table" % msg['from'])
                     XmppMasterDatabase().delPresenceMachinebyjiduser(msg['from'].user)
                     machine = {}
+
             if showinfobool:
                 if len(machine) != 0:
                     logger.info("Machine %s already exists in base" % msg['from'])

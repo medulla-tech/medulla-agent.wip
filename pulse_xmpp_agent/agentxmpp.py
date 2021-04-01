@@ -212,7 +212,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                                    'fingerprintnetwork')
         logging.debug("filename: %s" % filetempinfolibfingerprint)
         if os.path.exists(filetempinfolibfingerprint):
-            logging.debug("actuel fingerprint file %s" % file_get_contents(filetempinfolibfingerprint))
+            logging.debug("current fingerprint file %s" % file_get_contents(filetempinfolibfingerprint))
             # comparaison
             if netfingerprintstart != file_get_contents(filetempinfolibfingerprint):
                 logging.warning("after start : registration must update the information in the xmpp tables.")
@@ -2254,7 +2254,8 @@ class MUCBot(sleekxmpp.ClientXMPP):
             logger.error("subnetnetwork %s   %s"%(self.config.ipxmpp, xmppmask))
             subnetreseauxmpp =  subnetnetwork(self.config.ipxmpp, xmppmask)
         except Exception:
-            logger.error("\n%s"%(traceback.format_exc()))
+            logger.error("We failed to calculate the subnetnetwork, we hit this backtrace\n")
+            logger.error("\n %s" % (traceback.format_exc()))
             logreception = """
 Imposible calculate subnetnetwork verify the configuration of %s [%s]
 Check if ip [%s] is correct:
@@ -2737,7 +2738,7 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
                 if p.is_alive():
                     logger.debug("Alive %s (%s)"%(p.name,p.pid))
                     if p.name == "xmppagent":
-                        cmd = "ps ax | grep $(pgrep --parent %s) | grep \"defunct\""%p.pid
+                        cmd = "ps ax | grep $(pgrep --parent %s) | grep \"defunct\" | grep -v reversessh" % p.pid
                         result = simplecommand(cmd)
                         if result['code'] == 0:
                             if result['result']:
@@ -2908,7 +2909,7 @@ class process_xmpp_agent():
                     setgetcountcycle(1)
                     try:
                         timealternatifars = random.randint(*xmpp.config.timealternatif)
-                        logging.log(DEBUGPULSE,"waiting %s for reconection alternatif ARS"%timealternatifars)
+                        logging.log(DEBUGPULSE,"waiting %s for reconnection alternatif ARS"%timealternatifars)
                         time.sleep(timealternatifars)
                         newparametersconnect = nextalternativeclusterconnection(conffilename("cluster"))
 

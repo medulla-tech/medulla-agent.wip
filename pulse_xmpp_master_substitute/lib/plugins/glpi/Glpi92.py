@@ -3812,8 +3812,9 @@ class Glpi92(DatabaseHelper):
                                     resultrecord[keynameresult] = getattr(ret, keynameresult)
                     except AttributeError:
                         resultrecord[keynameresult] = ""
-        except Exception:
-            self.logger.error("\n%s" % (traceback.format_exc()))
+        except Exception as e:
+            self.logger.error("We encountered the error %s" % str(e) )
+            self.logger.error("\n with the backtrace \n%s" % (traceback.format_exc()))
         return resultrecord
 
     def _machineobject(self, ret):
@@ -3869,11 +3870,6 @@ class Glpi92(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def get_machines_list(self, session, start, end, ctx):
-        """
-            this function is used for afficher the computer view based on glpi.
-            this function is used for consolidation xmpp table machine (ctx id_machine and uuidsetup
-
-        """
         # start and end are used to set the limit parameter in the query
         start = int(start)
         end = int(end)
@@ -3907,8 +3903,6 @@ class Glpi92(DatabaseHelper):
                 query = query.join(Peripherals, and_(Computersitems.items_id == Peripherals.id,
                                    Computersitems.itemtype == "Peripheral"))\
                     .join(Peripheralsmanufacturers, Peripherals.manufacturers_id == Peripheralsmanufacturers.id)
-        #if 'cn' in self.config.summary or idmachine != "":
-        # fild always exist
         query = query.add_column(Machine.name.label("cn"))
         if uuidsetup != "" or idmachine != "":
             query = query.add_column(Machine.uuid.label("uuid_setup"))
@@ -3950,7 +3944,6 @@ class Glpi92(DatabaseHelper):
         if 'manufacturer' in self.config.summary or idmachine != "" or uuidsetup != "":
             query = query.add_column(self.manufacturers.c.name.label("manufacturer"))
         if idmachine != "" or uuidsetup != "":
-            ### add couum for information
             listcolumaddforinfo = [ 'id',
                                     'entities_id',
                                     'name',

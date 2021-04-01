@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# (c) 2016 siveo, http://www.siveo.net
+# (c) 2016-2021 siveo, http://www.siveo.net
 #
 # This file is part of Pulse 2, http://www.siveo.net
 #
@@ -26,17 +26,16 @@ import logging
 import sys
 from lib.managepackage import managepackage
 
-plugin = {"VERSION" : "1.0", "NAME" : "scheduling_ars_synchronization",  "TYPE" : "all", "SCHEDULED" : True}
+plugin = {"VERSION" : "1.2", "NAME" : "scheduling_ars_synchro_package",  "TYPE" : "all", "SCHEDULED" : True}
 
 # nb  -1 infinie
 SCHEDULE = {"schedule" : "*/1 * * * *", "nb" : -1}
-#SCHEDULE = {"schedule" : "30 22 * * 2", "nb" : -1}
 
 def schedule_main(objectxmpp):
-    logging.getLogger().debug("==========Plugin scheduling_ars_synchronization==========")
+    logging.getLogger().debug("==========Plugin scheduling_ars_synchro_package==========")
     logging.getLogger().debug(plugin)
     logging.getLogger().debug("=========================================================")
 
 
-    managepackage.del_link_symbolic()
-    managepackage.package_for_deploy_from_partage()
+    managepackage.remove_symlinks()
+    managepackage.package_for_deploy_from_share()

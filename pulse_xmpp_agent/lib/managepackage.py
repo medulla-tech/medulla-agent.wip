@@ -54,33 +54,34 @@ class managepackage:
             return None
 
     @staticmethod
-    def search_list_package(dirpartage = None):
+    def search_list_package():
         """
-            list tout les packages in les partages
+            This function searches packages in the global and
+            local shares.
         """
-        packagelist=[]
-        if dirpartage is None:
-            dirpackage = managepackage.packagedir()
-        else:
-            dirpartage = os.path.abspath(os.path.realpath(dirpartage))
-        dirglobal = os.path.join(dirpackage,"sharing", "global")
-        packagelist = [os.path.join(dirglobal, f) for f in os.listdir(dirglobal) if len(f) == 36]
-        dirlocal  = os.path.join(dirpackage, "sharing")
-        pathnamepartage = [os.path.join(dirlocal, f) for f in os.listdir(dirlocal) if f != "global"]
-        for part in pathnamepartage:
+        packagelist = []
+        dirpackage = os.path.join("/", "var", "lib", "pulse2", "packages")
+        global_package_folder = os.path.join(dirpackage, "sharing", "global")
+        packagelist = [os.path.join(global_package_folder, f)
+                for f in os.listdir(global_package_folder) if len(f) == 36]
+        local_package_folder  = os.path.join(dirpackage, "sharing")
+        share_pathname = [os.path.join(local_package_folder, f)
+                for f in os.listdir(local_package_folder) if f != "global"]
+        for part in share_pathname:
             filelist = [os.path.join(part, f) for f in os.listdir(part) if len(f) == 36]
             packagelist += filelist
         return packagelist
 
     @staticmethod
-    def package_for_deploy_from_partage(dirpartage = None):
+    def package_for_deploy_from_share(sharedir=None):
         """
-            Cette fonction crée les liens symbolique pour les partages.
+            This function creates symlinks in the packages directory
+            to the target in the local/global share
         """
-        if dirpartage is None:
+        if sharedir is None:
             dirpackage = managepackage.packagedir()
         else:
-            dirpartage = os.path.abspath(os.path.realpath(dirpartage))
+            sharedir = os.path.abspath(os.path.realpath(sharedir))
         for x in  managepackage.search_list_package():
             print x , os.path.join(dirpackage, os.path.basename(x))
             try:
@@ -89,9 +90,9 @@ class managepackage:
                 pass
 
     @staticmethod
-    def del_link_symbolic(dirpackage = None):
+    def remove_symlinks(dirpackage=None):
         """
-            Cette fonction suprime les liens symboliques cassés pour les partages.
+            This function remove symlinks
         """
         if dirpackage is None:
             dirpackage = managepackage.packagedir()
@@ -109,8 +110,8 @@ class managepackage:
         Returns:
             It returns the list of the packages.
         """
-        return [os.path.join(managepackage.packagedir(), x) for x in os.listdir(
-            managepackage.packagedir()) if os.path.isdir(os.path.join(managepackage.packagedir(), x))]
+        listfolder = [ x for x in os.listdir(managepackage.packagedir()) if len(x) == 36] 
+        return [ os.path.join(managepackage.packagedir(),x) for x in listfolder]
 
     @staticmethod
     def loadjsonfile(filename):
@@ -145,7 +146,7 @@ class managepackage:
                     return outputJSONFile
             except Exception as e:
                 logger.error("Please verify the format of the descriptor for"
-                             "the package %s." %s)
+                             "the package %s." % packagename)
                 logger.error("we are encountering the error: %s" % str(e))
         return None
 
@@ -216,7 +217,6 @@ class managepackage:
             except Exception as e:
                 logger.error("The conf.json for the package %s is missing" % package)
                 logger.error("we are encountering the error: %s" % str(e))
-                return None
         logger.error("We did not find the package %s" % package)
         return None
 

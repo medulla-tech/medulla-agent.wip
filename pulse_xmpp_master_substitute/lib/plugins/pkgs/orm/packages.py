@@ -201,7 +201,7 @@ class Packages(object):
             return self.edition_status
         else:
             return None
-    
+
     def to_array(self):
         """
         This function serialize the object to dict.

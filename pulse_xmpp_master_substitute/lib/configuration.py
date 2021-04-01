@@ -319,15 +319,11 @@ class confParameter:
         if confiobject.has_option("state", "red"):
             self.red = confiobject.getint("state", "red")
 
-        #  cela va etre utiliser pour configurer la table machine depuis glpi.
-        # on garde la logique de mmc
-        # les reg_key_ a affichier sont definies  reg_key_1 reg_key_2
-        # correspondent a reg_key_1 et reg_key_2 definie dans section inventory
+        # This will be used to configure the machine table from glpi
+        # The reg_key_ shown are displayed as reg_key_1 reg_key_2
         self.summary = ['cn', 'description', 'os', 'type', 'user', 'entity']
         if confiobject.has_option("computer_list", "summary"):
             self.summary = confiobject.get("computer_list", "summary").split(' ')
-
-        #inventory reg key windows.
 
         ## Registry keys that need to be pushed in an inventory
         ## Format: reg_key_x = path_to_key|key_label_shown_in_mmc

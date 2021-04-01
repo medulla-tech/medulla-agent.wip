@@ -90,12 +90,18 @@ class Pkgs_shares(object):
             return ""
 
     def getusedquotas(self):
+        """
+            This function is used to retrieve the used quotas
+        """
         if self.usedquotas is not None:
             return self.usedquotas
         else:
             return ""
 
     def getquotas(self):
+        """
+            This function is used to retrieve the quotas
+        """
         if self.quotas is not None:
             return self.quotas
         else:
