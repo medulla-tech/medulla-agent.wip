@@ -39,7 +39,7 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
 
     compteurcallplugin = getattr(objectxmpp, "num_call%s" % action)
     # send demande module mmc actif sur master
-    logger.info("================== Recherche module mmc installer ===================================")
+    logger.debug("Looking for installed mmc modules")
     objectxmpp.listmodulemmc = []
     objectxmpp.send_message(mto=objectxmpp.agentmaster,
                             mbody=json.dumps(data_struct_message("enable_mmc_module")),

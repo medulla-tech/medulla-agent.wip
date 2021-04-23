@@ -266,3 +266,4 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
         #objectxmpp.send_message(mto=message['from'],
                                 #mbody=json.dumps(result),
                                 #mtype='chat')
+
