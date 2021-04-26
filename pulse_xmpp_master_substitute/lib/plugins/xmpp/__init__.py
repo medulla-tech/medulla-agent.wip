@@ -6499,12 +6499,12 @@ class XmppMasterDatabase(DatabaseHelper):
 <html>
 <head>
 <meta charset="utf-8" />
-<title></title>
+<title>Alert @mon_devices_device_type@</title>
 <style type="text/css">
 table {
 border:3px solid #6495ed;
 border-collapse:collapse;
-width:90%;
+width:90%%;
 margin:auto;
 }
 thead, tfoot {
@@ -6521,11 +6521,11 @@ font-family:monospace;
 border:1px dotted #6495ed;
 padding:5px;
 background-color:#EFF6FF;
-width:25%;
+width:25%%;
 }
 td {
 font-family:sans-serif;
-font-size:80%;
+font-size:80%%;
 border:1px solid #6495ed;
 padding:5px;
 text-align:left;
@@ -6537,9 +6537,7 @@ font-family:sans-serif;
 </style>
 </head>
 <body>
-
-<h1>ALERT @mon_devices_device_type@ : e.
-</h1>
+<h1>ALERT @mon_devices_device_type@ : "%s"</h1>
 <h2>MAchine @mon_machine_hostname@</h2>
 
 <!-- DEVICE INFORMATION -->
@@ -6649,7 +6647,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
 </table>
 
 </body>
-</html>"""
+</html>""" % datetime.now().strftime("%a_%d%b%Y_%Hh%M")
         for t in dictresult:
             search="@%s@"%t
             templateevent = templateevent.replace(search, str(dictresult[t]))
