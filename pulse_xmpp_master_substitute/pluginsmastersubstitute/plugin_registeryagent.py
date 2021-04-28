@@ -880,7 +880,10 @@ def handlerkioskpresence(xmppobject,
 def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg, idmachine):
     btestfindcomputer = False
     machineglpiid = -1
-
+    if 'uuid_serial_machine' in data and data['uuid_serial_machine']:
+        data['uuid_serial_machine'] = data['uuid_serial_machine'].strip()
+    else:
+        data['uuid_serial_machine'] = ""
     if data['uuid_serial_machine'] != "":
         #cherche machine in glpi on uuid_setup
         if showinfobool:
@@ -892,11 +895,16 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
     setupuuid = False
     if data['uuid_serial_machine'] != "":
         #cherche machine in glpi on uuid_setup
-        setupuuid = getMachineInformationByUuidSetup(data['uuid_serial_machine'],
-                                                     showinfobool)
+        try:
+            setupuuid = getMachineInformationByUuidSetup(data['uuid_serial_machine'],
+                                                         showinfobool)
+        except Exception:
+            logger.error("\n%s" % (traceback.format_exc()))
+            setupuuid={}
 
-    if data['uuid_serial_machine'] != "" and setupuuid['count'] != 0:
-        logger.info("setupuuid %s" % setupuuid)
+    if isinstance(setupuuid, dict) and 'count' in setupuuid and setupuuid['count'] != 0:
+        if showinfobool:
+            logger.info("setupuuid %s" % setupuuid)
         # structure machine de glpi_computer table pour uuid setup .data['uuid_serial_machine']
         # on a 1 setup uuid on consolide xmpp et glpi sur uuid_serial_machine
         uuid = 'UUID' + str(setupuuid['data']['id'][0])
