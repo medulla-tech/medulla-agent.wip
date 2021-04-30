@@ -154,9 +154,7 @@ def rotation_file(namefile, suffixe=""):
     for x in range(5,0,-1):
         src = "%s%s_%s"%(namefile,suffixe, x)
         dest = "%s%s_%s"%(namefile,suffixe, x+1)
-        logger.error("src %s to dest %s" % (src,dest))
         if  os.path.isfile(src):
-            logger.error("existe")
             shutil.copyfile(src, dest)
         if x == 1:
             shutil.copyfile(namefile, dest)
