@@ -143,7 +143,7 @@ def conffilenametmp(agenttype):
 
 
 def rotation_file(namefile, suffixe=""):
-     """
+    """
         This function exec rotaion file.
 
         Args:
