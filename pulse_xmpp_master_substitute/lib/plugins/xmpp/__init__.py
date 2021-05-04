@@ -4952,6 +4952,33 @@ class XmppMasterDatabase(DatabaseHelper):
             return a
 
     @DatabaseHelper._sessionm
+    def getidlistPresenceMachine(self, session, presence=None):
+        strpresence = ""
+        a= []
+        try:
+            if presence is not None:
+                if presence == True:
+                    strpresence = " and enabled = 1"
+                else:
+                    strpresence = " and enabled = 0"
+            sql = """SELECT
+                        SUBSTR(uuid_inventorymachine, 5)
+                    FROM
+                        xmppmaster.machines
+                    WHERE
+                        agenttype = 'machine'
+                    and
+                        uuid_inventorymachine IS NOT NULL %s;"""%strpresence
+            presencelist = session.execute(sql)
+            session.commit()
+            session.flush()
+            return [ x[0] for x in  presencelist ]
+        except Exception as e:
+            logging.getLogger().error("getidlistPresenceMachine for presence %s" % presence)
+            logging.getLogger().error("sql error %s" % sql)
+            return []
+
+    @DatabaseHelper._sessionm
     def getxmppmasterfilterforglpi(self, session, listqueryxmppmaster=None):
         fl = listqueryxmppmaster[3].replace('*',"%")
         if listqueryxmppmaster[2] == "OU user":
