@@ -1,0 +1,123 @@
+The next directory (/var/lib/pulse2/tmpprocessmonitoring) is used to set the templates used to generate event scripts that are in (/var/lib/pulse2/script_monitoring).
+
+
+example event rule for traitement evenement.
+
+for imput
+
+{
+    "action": "terminalInformations", 
+    "sessionid": "xxxxx", 
+    "base64": false, 
+    "data": {
+        "date": "2020-06-24T15:45:02.000Z", 
+        "device_service": [
+            {
+                "thermalPrinter": {
+                    "status": "error", 	// "ready", "busy", "warning", "error"      
+                    "serial": "IMA3C08908", 
+                    "firmware": "2.45", 
+                    "metriques": {
+                        "counters": {
+                            "loadingFaults": "nnn", 
+                            "cutErrors": "nnn", 
+                            "initErrors": "nnn", 
+                            "noPaper": "nnn", 
+                            "hoodOpen": "nnn", 
+                            "comErrors": "nnn", 
+                            "printErrors": "nnn", 
+                            "receipts": "nnn"
+                        }
+                    }, 
+                    "message": [
+                        "HOOD_OPEN", 
+                        "NO_PAPER", 
+                        "NO_DEVICE"
+                    ]
+                }
+            }, 
+            {
+                "opticalReader": {
+                    "status": "disable", 	// "ready", "disable", "busy", "warning", "error"      
+                    "serial": "LIT3B20490 ", 
+                    "firmware": "2.100.10", 
+                    "metriques": {
+                        "counters": {
+                            "tickets": "99", 
+                            "initErrors": "nnn", 
+                            "comErrors": "nnn", 
+                            "inits": "nnn", 
+                            "colorScans": "nnn", 
+                            "readErrors": "nnn", 
+                            "receipts": "nnn"
+                        }
+                    }, 
+                    "message": [
+                        "NO_DEVICE", 
+                        "DOC_PRESENT"
+                    ]
+                }
+            }, 
+            {
+                "system": {
+                    "status": "warning", // "ready", "warning", "error"   
+                    "alarms": [
+                        "ALARM_INTRUSION", 
+                        "ALARM_TEMP_CPU", 
+                        "ALARM_TEMP_MAINBOARD"
+                    ], 
+                    "metriques": {
+                        "mbTemp": "35", 
+                        "cpuFan": "1250", 
+                        "average": {
+                            "cpuTemp": "nnn", 
+                            "cpuFan": "nnn", 
+                            "mbTemp": "nnn", 
+                            "memory": "nnn"
+                        }, 
+                        "memory": "45%", 
+                        "maximum": {
+                            "cpuTemp": "nnn", 
+                            "cpuFan": "nnn", 
+                            "mbTemp": "nnn", 
+                            "memory": "nnn"
+                        }, 
+                        "cpuTemp": "40", 
+                        "storage1": "65%", 
+                        "storage2": "43%", 
+                        "cpu": "18%", 
+                        "counters": {
+                            "intrusions": "nnn"
+                        }
+                    }
+                }
+            }, 
+            {
+                "nfcReader": {
+                    "status": "disable", 	// "ready", "disable", "error"     
+                    "message": [
+                        "NO_DEVICE"
+                    ], 
+                    "firmware": "xxxx", 
+                    "metriques": {
+                        "counters": {
+                            "reads": "25", 
+                            "readErrors": "nnn"
+                        }
+                    }, 
+                    "serial": "xxxxxx"
+                }
+            }
+        ], 
+        "other_data": {}
+    }, 
+    "ret": 0
+}
+
+
+
+LOCK TABLES `mon_rules` WRITE;
+/*!40000 ALTER TABLE `mon_rules` DISABLE KEYS */;
+INSERT INTO `mon_rules` VALUES (1,NULL,'system','resultbinding = True if 1 else False','je suis 1 log',NULL,NULL,'log',NULL,'Simple system alert'),(2,NULL,'thermalprinter','resultbinding =  True  if int(data[\'counters\'][\'loadingFaults\']) <= 100 else False','cmd therminal',NULL,NULL,'script_python','jfk','test'),(4,'deb10-90','system','resultbinding = True if int(data[\'counters\'][\'memory\']) >= 15 else False','free -hm >/tmp/free.txt',NULL,NULL,'cmd terminal','root','test system'),(6,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','glpi',NULL,'','api',NULL,NULL),(7,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','il faut faire quelque choses',NULL,NULL,'log',NULL,NULL),(8,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','tu es ok pour la device NFCReader',NULL,NULL,'ack',NULL,NULL),(9,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','pluging_mom_hello_machine',NULL,NULL,'xmppmsg','deb10-90.azc@pulse','{\"action\":\"testmonitoring\",\n                             \"data\": {\"infojson\":  @@@@@event@@@@@,\n                                       \"msgfrom\" : \"@@@@@msgfrom@@@@@\"\n                            },\n                \"ret\": 0,\n                \"sessionid\":  \"@@@@@session_id@@@@@\"}'),(10,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','template_alert_email.py',NULL,NULL,'email1','jean-francois.kneib@siveo.net, kneib.jean-francois@cegetel.net','templatemail'),(11,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','template_script_python.py','',NULL,'script_python1',NULL,NULL),(12,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','template_script_json.sh',NULL,NULL,'script_bash',NULL,NULL),(13,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','id > /tmp/qui.txt',NULL,NULL,'cmd_terminal1','root',''),(14,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','free -hm',NULL,NULL,'cmd_terminal1',NULL,NULL),(15,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','id > /tmp/qui.txt',NULL,NULL,'cmd_terminal1','jfk',NULL),(16,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','ls -al',NULL,NULL,'cmd_terminal1','pulsetransfert',NULL),(17,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','ssh -v -o ConnectTimeout=1 -o ConnectionAttempts=1 pulseuser@@@@@@hostname@@@@@ <<eof\ncmd1\ncmd2\neof',NULL,NULL,'cmd_terminal','root',NULL),(18,'deb10-90','nfcReader','resultbinding = True if int(data[\'counters\'][\'reads\']) >= 15 else False','pluging_mom_hello_machine',NULL,NULL,'xmppmsg','this','{\"action\":\"testmonitoring\",\n                             \"data\": {\"infojson\":  @@@@@event@@@@@,\n                                 \"msgfrom\" : \"@@@@@msgfrom@@@@@\"\n                            },\n                \"ret\": 0,\n                \"sessionid\":  \"@@@@@session_id@@@@@\"}');
+/*!40000 ALTER TABLE `mon_rules` ENABLE KEYS */;
+UNLOCK TABLES;
