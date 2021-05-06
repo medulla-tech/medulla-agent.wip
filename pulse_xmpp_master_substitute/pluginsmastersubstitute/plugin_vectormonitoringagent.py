@@ -190,12 +190,16 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
 
     machine = XmppMasterDatabase().getMachinefromjid(message['from'])
     logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
+    logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
     if "subaction" in data and \
         data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
         # inscription message alert depuis machine
+        logger.error("subaction %s %s" % (data['subaction']))
+        
         statusmsg = ""
         if 'status' in data:
             statusmsg = json.dumps(data['status'])
+            logger.error("statusmsg %s " % (statusmsg))
         id_mom_machine = XmppMasterDatabase().setMonitoring_machine(
                                 machine['id'],
                                 machine['hostname'],
