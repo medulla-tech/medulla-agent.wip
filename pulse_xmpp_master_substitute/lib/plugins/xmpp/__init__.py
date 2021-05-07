@@ -5245,22 +5245,6 @@ class XmppMasterDatabase(DatabaseHelper):
         return {}
 
     @DatabaseHelper._sessionm
-    def getMachineHostname(self, session, hostname):
-        try:
-            machine = session.query(Machines.id,
-                                    Machines.uuid_inventorymachine).\
-                                        filter(Machines.hostname == hostname).first()
-            session.commit()
-            session.flush()
-            if machine:
-                return {"id": machine.id,
-                        "uuid_inventorymachine": machine.uuid_inventorymachine}
-        except Exception as e:
-            logging.getLogger().error("function getMachineHostname %s" % str(e))
-
-        return {}
-
-    @DatabaseHelper._sessionm
     def getGuacamoleRelayServerMachineHostname(self, session, hostname,
                                                enable=1, agenttype="machine"):
         querymachine = session.query(Machines)
