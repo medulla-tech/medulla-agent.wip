@@ -5826,8 +5826,14 @@ class XmppMasterDatabase(DatabaseHelper):
             self.logger.error("string %s" % result)
             return -1
         jsonautre = copy.deepcopy(jsonresult)
-        del jsonautre['descriptor']
-        del jsonautre['packagefile']
+        try:
+            del jsonautre['descriptor']
+        except KeyError:
+            pass
+        try:
+            del jsonautre['packagefile']
+        except KeyError:
+            pass
         #DEPLOYMENT START
         try:
             deploysession = session.query(Deploy).filter(Deploy.sessionid == sessionid).one()
