@@ -891,10 +891,12 @@ def handlerkioskpresence(xmppobject,
 def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg, idmachine):
     btestfindcomputer = False
     machineglpiid = -1
+
     if 'uuid_serial_machine' in data and data['uuid_serial_machine']:
         data['uuid_serial_machine'] = data['uuid_serial_machine'].strip()
     else:
         data['uuid_serial_machine'] = ""
+
     if data['uuid_serial_machine'] != "":
         #cherche machine in glpi on uuid_setup
         if showinfobool:
@@ -905,7 +907,6 @@ def test_consolidation_inventory(xmppobject, sessionid, data, showinfobool, msg,
 
     setupuuid = False
     if data['uuid_serial_machine'] != "":
-        #cherche machine in glpi on uuid_setup
         try:
             setupuuid = getMachineInformationByUuidSetup(data['uuid_serial_machine'],
                                                          showinfobool)

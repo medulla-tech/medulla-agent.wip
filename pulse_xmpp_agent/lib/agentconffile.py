@@ -144,7 +144,7 @@ def conffilenametmp(agenttype):
 
 def rotation_file(namefile, suffixe=""):
     """
-        This function exec rotaion file.
+    This function exec rotation file.
 
         Args:
             namefile: name file rotation
