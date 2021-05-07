@@ -514,8 +514,6 @@ class grafcet:
             os.chdir(managepackage.packagedir())
             if clear:
                 if sys.platform.startswith('win'):
-                    #print "supprime file"
-                    #print "rmdir /s /q \"%s\"" % self.datasend['data']['pathpackageonmachine']
                     os.system("rmdir /s /q \"%s\"" %
                               self.datasend['data']['pathpackageonmachine'])
                 else:
@@ -2075,8 +2073,6 @@ class grafcet:
             ) in self.datasend['data']['pathpackageonmachine']:
                 os.chdir(managepackage.packagedir())
                 if sys.platform.startswith('win'):
-                    print "supprime file %s "
-                    print "rmdir /s /q \"%s\"" % self.datasend['data']['pathpackageonmachine']
                     os.system("rmdir /s /q \"%s\"" %
                               self.datasend['data']['pathpackageonmachine'])
                 else:

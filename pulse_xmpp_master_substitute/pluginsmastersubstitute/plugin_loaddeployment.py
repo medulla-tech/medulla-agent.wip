@@ -110,7 +110,6 @@ def scheduledeploy(self):
                 XmppMasterDatabase().refresh_syncthing_deploy_clean(deploydata['id'])
     except Exception:
         pass
-    #listobjnoexist = []
     listobjsupp = []
     # Search deploy to running
     resultdeploymachine = MscDatabase().deployxmpp()
