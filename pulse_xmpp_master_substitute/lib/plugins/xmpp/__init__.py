@@ -4807,6 +4807,10 @@ class XmppMasterDatabase(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def getPresenceExistuuids(self, session, uuids):
+        """
+            this fonction return 1 dict de tableau de presence des MACHINE GLPI
+                {'UUID_GLPI': [presence machine, uuid glpi initialise]}
+        """
         if isinstance(uuids, basestring):
             uuids=[uuids]
         result = { }
@@ -4824,6 +4828,26 @@ class XmppMasterDatabase(DatabaseHelper):
             result[linemachine.uuid_inventorymachine] = [out, 1]
 
         return result
+
+
+    @DatabaseHelper._sessionm
+    def update_uuid_inventory(self, session, id, UUID):
+        """
+            initialise uuid inventory
+        """
+        try:
+            sql = """UPDATE `xmppmaster`.`machines`
+                    SET
+                        `uuid_inventorymachine` = '%s'
+                    WHERE
+                        `id`  = %s;""" % (UUID, id)
+            result = session.execute(sql)
+            session.commit()
+            session.flush()
+            return result
+        except Exception as e:
+            logging.getLogger().error("update_uuid_inventory: %s" % str(e))
+            return False
 
     # Topology
     @DatabaseHelper._sessionm
