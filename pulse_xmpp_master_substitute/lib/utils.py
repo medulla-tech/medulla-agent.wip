@@ -1132,12 +1132,12 @@ def subnetnetwork(adressmachine, mask):
     reseaumachine = ipV4toDecimal(adressmachine) & ipV4toDecimal(mask)
     return decimaltoIpV4(reseaumachine)
 
-def adresse_subnet(address,maskvalue ):
+def subnet_address(address,maskvalue):
     addr = [int(x) for x in adress.split(".")]
     mask = [int(x) for x in maskvalue.split(".")]
     subnet = [addr[i] & mask[i] for i in range(4)]
-    brocast =  [(addr[i] & mask[i]) | (255^mask[i]) for i in range(4)]
-    return ".".join([str(x) for x in subnet]), '.'.join([str(x) for x in brocast])
+    broadcast =  [(addr[i] & mask[i]) | (255^mask[i]) for i in range(4)]
+    return ".".join([str(x) for x in subnet]), '.'.join([str(x) for x in broadcast])
 
 def find_ip():
     candidates =[]

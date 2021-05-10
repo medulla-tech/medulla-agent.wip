@@ -122,8 +122,11 @@ def scheduledeploy(self):
         if resultpresence[UUID][1] == 0:
             ## il n'y a pas de uuid glpi
             re_search = XmppMasterDatabase().getMachinedeployexistonHostname(deployobject['name'])
-            if self.Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine and len(re_search) == 1:
-                XmppMasterDatabase().update_uuid_inventory( re_search[0]['id'], UUID)
+            if self.Recover_GLPI_Identifier_from_name and len(re_search) == 1:
+                update_result = XmppMasterDatabase().update_uuid_inventory(re_search[0]['id'], UUID)
+                if update_result is not None:
+                    if update_result.rowcount > 0:
+                        logger.info("update uuid inventory %s for machine %s" % (UUID, deployobject['name']))
                 resultpresence[UUID][1] = 1
                 resultpresence = XmppMasterDatabase().getPresenceExistuuids(UUID)
                 self.xmpplog("Attaching GLPI identifier [%s] in xmppmaster machine [%s]" % (UUID, deployobject['name']),
@@ -1172,7 +1175,7 @@ def read_conf_loaddeployment(objectxmpp):
         objectxmpp.deployment_scan_interval = 30
         objectxmpp.wol_interval = 60
         objectxmpp.session_check_interval = 15
-        objectxmpp.Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine = False
+        objectxmpp.Recover_GLPI_Identifier_from_name = False
     else:
         Config = ConfigParser.ConfigParser()
         Config.read(pathfileconf)
@@ -1196,10 +1199,10 @@ def read_conf_loaddeployment(objectxmpp):
         else:
             objectxmpp.session_check_interval = 15
 
-        if Config.has_option("parameters", "Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine"):
-            objectxmpp.Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine =  Config.getboolean('parameters', 'Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine')
+        if Config.has_option("parameters", "Recover_GLPI_Identifier_from_name"):
+            objectxmpp.Recover_GLPI_Identifier_from_name =  Config.getboolean('parameters', 'Recover_GLPI_Identifier_from_name')
         else:
-            objectxmpp.Recover_GLPI_Identifier_If_this_is_possible_on_the_name_of_the_machine = False
+            objectxmpp.Recover_GLPI_Identifier_from_name = False
 
     # initialisation des object for deployement
 
