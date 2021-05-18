@@ -982,7 +982,9 @@ class MscDatabase(DatabaseHelper):
             self.logger.debug("machine %s [%s] presente for deploy package %s" % (msc_machine_to_deploy.target_target_name,
                                                                                   msc_machine_to_deploy.target_target_uuid,
                                                                                   msc_machine_to_deploy.commands_package_id))
-            title ="%s %s"%( str(msc_machine_to_deploy.commands_title), datestr)
+            title = str(msc_machine_to_deploy.commands_title)
+            if title.startswith("Convergence on"):
+                title ="%s %s"%( title, datestr)
             deployobject = {'name': str(msc_machine_to_deploy.target_target_name)[:-1],
                             'pakkageid': str(msc_machine_to_deploy.commands_package_id),
                             'commandid':  msc_machine_to_deploy.commands_id,
