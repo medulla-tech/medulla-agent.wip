@@ -3194,9 +3194,8 @@ class XmppMasterDatabase(DatabaseHelper):
                 if (type(params) is list or type(params) is dict) and len(params) != 0:
                     new_logincommand.params_json = json.dumps(params)
             except Exception as e:
-                logging.getLogger().error("initialisation advanced "\
-                    "deploy (addlogincommand) %s" % str(e))
-                logging.getLogger().error("verify params parameter %s" % params)
+                logging.getLogger().error("We encountered an error. The error message is %s" % str(e))
+                logging.getLogger().error("Please, verify the parameters %s" % params)
             session.add(new_logincommand)
             session.commit()
             session.flush()
