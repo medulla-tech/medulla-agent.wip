@@ -846,7 +846,8 @@ def applicationdeploymentjson(self,
         logger.error("deploy %s on %s  error : xmppdeploy.json missing" % (name, uuidmachine))
         return False
     objdeployadvanced = XmppMasterDatabase().datacmddeploy(idcommand)
-
+    if not objdeployadvanced:
+        logger.error("advanced idcommand (%s) missing in table has_login_commandissing" % (idcommand))
     if jidmachine is not None and jidmachine != "" and jidrelay is not None and jidrelay != "":
         userjid=jid.JID(jidrelay).user
         iprelay = XmppMasterDatabase().ipserverARS(userjid)[0]
