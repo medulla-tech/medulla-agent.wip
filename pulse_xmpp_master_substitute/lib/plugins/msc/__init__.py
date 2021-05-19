@@ -975,7 +975,7 @@ class MscDatabase(DatabaseHelper):
         updatemachine = []
         machine_list = []
         machine_do_deploy = {}
-        self.logger.debug("select deploy machine")
+        self.logger.debug("launch new select deploy machine")
         datenow = datetime.datetime.now()
         datestr = datenow.strftime('%Y-%m-%d %H:%M:%S')
         for msc_machine_to_deploy in selectedMachines:

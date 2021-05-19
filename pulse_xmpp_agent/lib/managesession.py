@@ -68,7 +68,7 @@ class sessiondatainfo:
 
     def sauvesession(self):
         namefilesession = os.path.join(self.pathfile, self.sessionid)
-        logging.getLogger().debug("save session in file %s" % namefilesession)
+        logging.getLogger().debug("start session %s" % self.sessionid)
         session = {
             'sessionid': self.sessionid,
             'timevalid': self.timevalid,
