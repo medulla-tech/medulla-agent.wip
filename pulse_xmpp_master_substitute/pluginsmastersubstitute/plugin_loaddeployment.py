@@ -846,8 +846,11 @@ def applicationdeploymentjson(self,
         logger.error("deploy %s on %s  error : xmppdeploy.json missing" % (name, uuidmachine))
         return False
     objdeployadvanced = XmppMasterDatabase().datacmddeploy(idcommand)
+
     if not objdeployadvanced:
-        logger.error("advanced idcommand (%s) missing in table has_login_commandissing" % (idcommand))
+        logger.error("The line has_login_command for the idcommand %s is missing" % idcommand)
+        logger.error("To solve this, please remove the group, and recreate it")
+
     if jidmachine is not None and jidmachine != "" and jidrelay is not None and jidrelay != "":
         userjid=jid.JID(jidrelay).user
         iprelay = XmppMasterDatabase().ipserverARS(userjid)[0]
@@ -1012,13 +1015,12 @@ def syncthingdeploy(self):
             # We now call the syncthing master plugin
             data = {"subaction": "initialisation",
                     "iddeploy": iddeploy}
-            logging.debug("*** Call plugin deploysyncthing")
             self.callpluginsubstitute("deploysyncthing",
                                       data,
                                       sessionid=name_randomplus(25,
                                                                 pref="deploysyncthing"))
     else:
-        logging.debug("We failed to initialise the syncthing deploy.")
+        logging.debug("This is not a syncthing deploy, so we did not initialize it.")
 
 def callpluginsubstitute(self, plugin, data, sessionid=None):
     if sessionid is None:
