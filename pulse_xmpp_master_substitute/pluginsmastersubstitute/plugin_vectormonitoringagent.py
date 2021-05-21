@@ -31,7 +31,7 @@ from lib.plugins.xmpp import XmppMasterDatabase
 
 logger = logging.getLogger()
 
-plugin = {"VERSION": "1.3", "NAME": "vectormonitoringagent", "TYPE": "substitute"}
+plugin = {"VERSION": "1.4", "NAME": "vectormonitoringagent", "TYPE": "substitute"}
 
 def process_system(functionname,
                    xmppobject,
@@ -188,18 +188,21 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
             XmppMasterDatabase().getlistMonitoring_devices_type()
         logger.debug("list device %s" % (xmppobject.typelistMonitoring_device))
 
-    machine = XmppMasterDatabase().getMachinefromjid(message['from'])
-    logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
-    logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
+
     if "subaction" in data and \
         data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
         # inscription message alert depuis machine
-        logger.error("subaction %s %s" % (data['subaction']))
-        
+
+        if 'from' in data and data['from'] != "":
+             machine = XmppMasterDatabase().getMachinefromjid(data['from'])
+        else:
+            machine = XmppMasterDatabase().getMachinefromjid(message['from'])
+
         statusmsg = ""
+
+        logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
         if 'status' in data:
             statusmsg = json.dumps(data['status'])
-            logger.error("statusmsg %s " % (statusmsg))
         id_mom_machine = XmppMasterDatabase().setMonitoring_machine(
                                 machine['id'],
                                 machine['hostname'],
