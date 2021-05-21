@@ -5110,6 +5110,60 @@ class XmppMasterDatabase(DatabaseHelper):
             return -1
 
     @DatabaseHelper._sessionm
+    def update_Presence_Relay(self, session, jid, presense=0):
+        """
+            update relay table presense
+        """
+        try:
+            user = str(jid).split("@")[0]
+
+            sql = """UPDATE
+                        `xmppmaster`.`machines`
+                    SET
+                        `enabled` = '%s'
+                    WHERE
+                        `xmppmaster`.`machines`.`jid` like('%s@%%');""" % (presense,
+                                                                           user)
+            session.execute(sql)
+            sql = """UPDATE
+                        `xmppmaster`.`relayserver`
+                    SET
+                        `enabled` = '%s'
+                    WHERE
+                        `xmppmaster`.`relayserver`.`jid` like('%s@%%');""" % (presense,
+                                                                              user)
+            session.execute(sql)
+            session.commit()
+            session.flush()
+        except Exception, e:
+            logging.getLogger().error(str(e))
+            logging.getLogger().error("\n%s" % (traceback.format_exc()))
+
+    @DatabaseHelper._sessionm
+    def update_reconf_mach_of_Relay_down(self, session, jid, reconf=1):
+        """
+            renitialise remote configuration
+        """
+        try:
+            user = str(jid).split("@")[0]
+            sql = """UPDATE
+                        `xmppmaster`.`machines`
+                     SET
+                        `need_reconf` = '%s'
+                     WHERE
+                        `xmppmaster`.`machines`.`agenttype` like ("machine")
+                        AND
+                        `xmppmaster`.`machines`.`groupdeploy` like('%s@%%');""" % (reconf,
+                                                                           user)
+            session.execute(sql)
+            session.commit()
+            session.flush()
+        except Exception, e:
+            logging.getLogger().error(str(e))
+            logging.getLogger().error("\n%s" % (traceback.format_exc()))
+
+
+    @DatabaseHelper._sessionm
     def delPresenceMachine(self, session, jid):
         result = ['-1']
         typemachine = "machine"
