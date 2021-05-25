@@ -194,8 +194,6 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
     if "subaction" in data and \
         data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
         # inscription message alert depuis machine
-        logger.error("subaction %s %s" % (data['subaction']))
-        
         statusmsg = ""
         if 'status' in data:
             statusmsg = json.dumps(data['status'])
