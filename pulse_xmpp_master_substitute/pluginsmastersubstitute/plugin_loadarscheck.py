@@ -68,6 +68,7 @@ def action(objectxmpp, action, sessionid, data, msg, ret):
     except Exception as e:
         logger.error("machine info %s\n%s" % (str(e),traceback.format_exc()))
 
+
 def arscheck(self):
     """
         # cette function ping tout les ars toute le n sesonde.
@@ -217,6 +218,7 @@ def message_datas_to_monitoring_loadarscheck (self,ars,  message, informationact
                             mbody=json.dumps(msg),
                             mtype='chat')
 
+
 def test_client_and_serveur(self, jid_client):
     jidserveur = str(jid.JID(jid_client).domain)
     jidnamears = str(jid.JID(jid_client).user)
@@ -271,6 +273,7 @@ def affiche_server_status(self):
 def read_conf_loadarscheck(objectxmpp):
     logger.debug("Initialisation plugin : %s " % plugin["NAME"])
     namefichierconf = plugin['NAME'] + ".ini"
+
 
     #objectxmpp.ars_server_list_status = []
     # for _ in range(15): logger.info("read_conf_loadarscheck")
