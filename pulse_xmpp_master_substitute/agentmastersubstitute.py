@@ -97,23 +97,33 @@ def doTask( optsconsoledebug, optsdeamon, optfileconf):
 
     if "glpi" in tg.plugins_list:
         logger.info("activate GLPI")
-        Glpi().activate()
+        if not Glpi().activate():
+            logger.error("Connection to GLPI base. verify GLPI parameters")
+            return
 
     if "xmpp" in tg.plugins_list:
         logger.info("activate XMPP")
-        XmppMasterDatabase().activate()
+        if not XmppMasterDatabase().activate():
+            logger.error("Connection to XMPPMASTER base. verify xmppdatabase parameters")
+            return
 
     if "kiosk" in tg.plugins_list:
         logger.info("activate KIOSK")
-        KioskDatabase().activate()
+        if not KioskDatabase().activate():
+            logger.error("Connection to kiosk base. verify kioskdatabase parameters")
+            return
 
     if "msc" in tg.plugins_list:
         logger.info("activate MSC")
-        MscDatabase().activate()
+        if not MscDatabase().activate():
+            logger.error("Connection to msc base. verify mscdatabase parameters")
+            return
 
     if "pkgs" in tg.plugins_list:
         logger.info("activate PKGS")
-        PkgsDatabase().activate()
+        if not PkgsDatabase().activate():
+            logger.error("Connection to pkgs base. verify pkgsdatabase parameters")
+            return
 
     xmpp = MUCBot( )
     xmpp.register_plugin('xep_0030') # Service Discovery

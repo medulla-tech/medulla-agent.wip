@@ -163,20 +163,22 @@ class XmppMasterDatabase(DatabaseHelper):
         self.sessionglpi = None
         self.config = confParameter()
         # utilisation xmppmaster
-        self.engine_xmppmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.xmpp_dbuser,
-                                                                                 self.config.xmpp_dbpasswd,
-                                                                                 self.config.xmpp_dbhost,
-                                                                                 self.config.xmpp_dbport,
-                                                                                 self.config.xmpp_dbname),
-                                                     pool_recycle=self.config.dbpoolrecycle,
-                                                     pool_size=self.config.dbpoolsize)
-        self.Sessionxmpp = sessionmaker(bind=self.engine_xmppmmaster_base)
-        self.is_activated = True
-        self.logger.debug("xmpp finish activation")
-
-    # xmppmaster FUNCTIONS
-
-    # xmppmaster FUNCTIONS FOR Subscription
+        try:
+            self.engine_xmppmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.xmpp_dbuser,
+                                                                                    self.config.xmpp_dbpasswd,
+                                                                                    self.config.xmpp_dbhost,
+                                                                                    self.config.xmpp_dbport,
+                                                                                    self.config.xmpp_dbname),
+                                                        pool_recycle=self.config.dbpoolrecycle,
+                                                        pool_size=self.config.dbpoolsize)
+            self.Sessionxmpp = sessionmaker(bind=self.engine_xmppmmaster_base)
+            self.is_activated = True
+            self.logger.debug("xmpp finish activation")
+            return True
+        except Exception as e:
+            self.logger.error("ERROR DE CONNECTION XmppMaster database is connecting")
+            self.is_activated = False
+            return False
 
     @DatabaseHelper._sessionm
     def setagentsubscription(self,
