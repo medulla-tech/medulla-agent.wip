@@ -3746,6 +3746,162 @@ class XmppMasterDatabase(DatabaseHelper):
         session.query(Deploy).filter(Deploy.group_uuid == numgrp).delete()
         session.commit()
         session.flush()
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    @DatabaseHelper._sessionm    
+    def get_lit_all_user(self, session, login ):
+        """
+            Cette fonction renvoit 1 liste de id user,
+            faisant partie de la/les même(s) equipe(s) que login.
+        """
+        if login is None or login == "":
+            return []
+        sql=""" SELECT DISTINCT
+                    xmppmaster.pulse_users.login
+                FROM
+                    xmppmaster.pulse_users
+                        INNER JOIN
+                    xmppmaster.pulse_team_user ON 
+                        xmppmaster.pulse_team_user.id_user = xmppmaster.pulse_users.id
+                WHERE
+                    xmppmaster.pulse_team_user.id_team 
+                        IN (SELECT 
+                                xmppmaster.pulse_team_user.id_team
+                            FROM
+                                xmppmaster.pulse_users
+                                    INNER JOIN
+                                xmppmaster.pulse_team_user ON 
+                                    xmppmaster.pulse_team_user.id_user = xmppmaster.pulse_users.id
+                            WHERE
+                                xmppmaster.pulse_users.login = '%s');""" %(login)
+        result = session.execute(sql)
+        session.commit()
+        session.flush()
+        a = []
+        if result:
+            return [x[0] for x in result]
+        else:
+            return []
+
+    # ## JFKJFK get_deploy_by_team_user_recent
+    
+    @DatabaseHelper._sessionm
+    def get_deploy_by_team_user_recent(self, session, login , state, duree, min=None , max=None, filt=None):
+        pulse_usersid = self.get_lit_all_user(login) 
+        if pulse_usersid <= 1:
+            return self.getdeploybyuserrecent(login , state, duree, min=None , max=None, filt=None)
+               
+        deploylog = session.query(Deploy).filter( Deploy.login.in_(pulse_usersid))
+
+        if state:
+            deploylog = deploylog.filter( Deploy.state == state)
+
+        if duree:
+            deploylog = deploylog.filter( Deploy.start >= (datetime.now() - timedelta(seconds=duree)))
+
+        count = """select count(*) as nb from (
+        select count(id) as nb
+        from deploy
+        where start >= DATE_SUB(NOW(),INTERVAL 24 HOUR)
+        group by title
+        ) as x;"""
+
+        if filt is not None:
+            deploylog = deploylog.filter( or_(  Deploy.state.like('%%%s%%'%(filt)),
+                                                Deploy.pathpackage.like('%%%s%%'%(filt)),
+                                                Deploy.start.like('%%%s%%'%(filt)),
+                                                Deploy.login.like('%%%s%%'%(filt)),
+                                                Deploy.host.like('%%%s%%'%(filt))))
+            count = """select count(*) as nb from (
+              select count(id) as nb
+              from deploy
+              where start >= DATE_SUB(NOW(),INTERVAL 24 HOUR)
+              AND (state LIKE "%%%s%%"
+              or pathpackage LIKE "%%%s%%"
+              or start LIKE "%%%s%%"
+              or login LIKE "%%%s%%"
+              or host LIKE "%%%s%%"
+              )
+              group by title
+              ) as x;""" % (filt, filt, filt, filt, filt,)
+
+
+        lentaillerequette = self.get_count(deploylog)
+
+        result = session.execute(count)
+        session.commit()
+        session.flush()
+        lenrequest = [x for x in result]
+
+        #lentaillerequette = session.query(func.count(distinct(Deploy.title)))[0]
+        deploylog = deploylog.group_by(Deploy.title).order_by(desc(Deploy.id))
+
+        ##deploylog = deploylog.add_column(func.count(Deploy.title))
+        if min is not None and max is not None:
+            deploylog = deploylog.offset(int(min)).limit(int(max)-int(min))
+            
+        result = deploylog.all()
+        
+        
+        session.commit()
+        session.flush()
+        ret ={'total_of_rows' : 0,
+              'lentotal' : 0,
+              'tabdeploy' : {
+                                'state' : [],
+                                'pathpackage' : [],
+                                'sessionid' : [],
+                                'start' : [],
+                                'inventoryuuid' : [],
+                                'command' : [],
+                                'login' : [],
+                                'host' : [],
+                                'macadress' : [],
+                                'group_uuid' : [],
+                                'startcmd' : [],
+                                'endcmd' : [],
+                                'jidmachine' : [],
+                                'jid_relay' : [],
+                                'title' : []}}
+
+        ret['lentotal'] = lentaillerequette#[0]
+        ret['total_of_rows'] = lenrequest[0][0]
+        reg = "(.*)\.(.*)@(.*)\/(.*)"
+        for linedeploy in result:
+            if re.match(reg, linedeploy.host):
+                # New jid : name.salt@relay/macaddress
+                hostname = linedeploy.host.split('.')[0]
+            else:
+                try:
+                    # Old jid : macaddress@relay/name
+                    hostname = linedeploy.host.split('/')[1]
+                except Exception as e:
+                    hostname = linedeploy.host.split('.')[0]
+            ret['tabdeploy']['state'].append(linedeploy.state)
+            ret['tabdeploy']['pathpackage'].append(linedeploy.pathpackage.split("/")[-1])
+            ret['tabdeploy']['sessionid'].append(linedeploy.sessionid)
+            ret['tabdeploy']['start'].append(str(linedeploy.start))
+            ret['tabdeploy']['inventoryuuid'].append(linedeploy.inventoryuuid)
+            ret['tabdeploy']['command'].append(linedeploy.command)
+            ret['tabdeploy']['login'].append(linedeploy.login)
+            ret['tabdeploy']['host'].append(hostname)
+            ret['tabdeploy']['macadress'].append(linedeploy.macadress)
+            ret['tabdeploy']['group_uuid'].append(linedeploy.group_uuid)
+            ret['tabdeploy']['startcmd'].append(linedeploy.startcmd)
+            ret['tabdeploy']['endcmd'].append(linedeploy.endcmd)
+            ret['tabdeploy']['jidmachine'].append(linedeploy.jidmachine)
+            ret['tabdeploy']['jid_relay'].append(linedeploy.jid_relay)
+            ret['tabdeploy']['title'].append(linedeploy.title)
+        return ret
 
     @DatabaseHelper._sessionm
     def getdeploybyuserrecent(self, session, login , state, duree, min=None, max=None, filt=None):

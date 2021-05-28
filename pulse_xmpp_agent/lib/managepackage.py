@@ -38,7 +38,7 @@ class managepackage:
         This function provide the path of the package folder.
 
         @return: string: The path of the package folder.
-        """rm -rf 
+        """
         if sys.platform.startswith('linux'):
             if managepackage.agenttype == "relayserver":
                 return os.path.join("/", "var", "lib", "pulse2", "packages")

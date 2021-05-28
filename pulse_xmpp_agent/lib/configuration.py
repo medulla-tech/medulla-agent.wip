@@ -346,7 +346,7 @@ class confParameter:
         #######################################################################################
         if self.agenttype == "relayserver":
             self.centralizedmultiplesharing = True
-            if self.has_option("pkgs", "centralizedmultiplesharing"):
+            if Config.has_option("pkgs", "centralizedmultiplesharing"):
                 self.centralizedmultiplesharing = self.getboolean("pkgs",
                                                                 "centralizedmultiplesharing")
         # syncthing true or fale
