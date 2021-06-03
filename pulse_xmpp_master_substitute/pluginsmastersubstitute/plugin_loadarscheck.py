@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# (c) 2004-2007 Linbox / Free&ALter Soft, http://linbox.com
-# (c) 2007-2009 Mandriva, http://www.mandriva.com/
-# (c) 2016 siveo, http://www.siveo.net
+# (c) 2021 siveo, http://www.siveo.net
 #
 # $Id$
-#
-# This file is part of Pulse 2, http://pulse2.mandriva.org
 #
 # Pulse 2 is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,25 +19,25 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-""" declare the substitute plugin for deployments"""
-# pluginsmastersubstitute/plugin_loadarscheck.py
-#
-import base64
+
+"""
+    Plugin used to check if the ARS of the Ejabberd server are running
+    correctly.
+"""
+
 import traceback
 import os
-import sys
-import json
 import logging
 from lib.plugins.xmpp import XmppMasterDatabase
 from lib.utils import name_random
 import ConfigParser
 import types
-import datetime
 import time
 import random
 import re
 from sleekxmpp import jid
 from sleekxmpp.exceptions import IqError, IqTimeout
+from lib.plugins.xmpp import XmppMasterDatabase
 
 logger = logging.getLogger()
 
@@ -49,6 +45,9 @@ logger = logging.getLogger()
 plugin = {"VERSION": "1.2", "NAME": "loadarscheck", "TYPE": "substitute"}
 
 def action(objectxmpp, action, sessionid, data, msg, ret):
+    """
+        Used to configure/start the plugin
+    """
     try:
         logger.debug("=====================================================")
         logger.debug("call %s from %s" % (plugin, msg['from']))
@@ -62,6 +61,7 @@ def action(objectxmpp, action, sessionid, data, msg, ret):
         logger.error("We obtained the backtrace %s" % traceback.format_exc())
 
 
+
 def arscheck(self):
     """
         This function is used to ping the ARS regularly.
@@ -70,11 +70,13 @@ def arscheck(self):
     """
     sessionid = name_random(5, "monitoring_check_ars")
     
+
     if not self.ressource_scan_available:
         logger.debug("The ressource is not available.")
         return
     try:
         self.ressource_scan_available = False
+
         list_ars_search =  XmppMasterDatabase().getRelayServer()
         enabled_ars = [ x for x in list_ars_search if x['enabled']]
         disabled_ars = [ x for x in list_ars_search if not x['enabled']]
@@ -166,52 +168,19 @@ def message_datas_to_monitoring_loadarscheck (self, ars,  message, informationac
                 date=None,
                 fromuser=ars)
 
-    msg={
-    "action": "vectormonitoringagent",
-    "sessionid": "",
-    "base64": False,
-    "data": {
-        "subaction" : "terminalalert",
-        "from" : "",
-        "date": "",
-        "device_service": [
-            {
-                "alertMonitoring": {
-                    "status": "warning",
-                    "serial": "",
-                    "firmware": "",
-                    "metriques": {
-                        "informationaction":  ""
-                    },
-                    "message": [ ""]
-                }
-            }
-        ],
-        "other_data": {}
-    },
-    "ret": 0}
-    try:
-        msg["data"]['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        msg["data"]['from'] = ars
-        msg["sessionid"] = sessionid
-        msg["data"]['device_service'][0]['alertMonitoring']['metriques']['informationaction'] =  informationaction
-        msg["data"]['device_service'][0]['alertMonitoring']['message'][0] = message
-        logger.debug("SEND MSG %s to %s" % (msg , self.monitor_agent))
-    except Exception as e:
-        logger.error("( %s) " %(str(e)))
-        self.xmpplog("( %s) " %(str(e)),
-                    type='Monitoring',
-                    sessionname=sessionid,
-                    priority=-1,
-                    action="xmpplog",
-                    why=self.boundjid.bare,
-                    module="Notify | Substitut | Monitoring | Error",
-                    date=None,
-                    fromuser=ars)
-    self.send_message(mto=self.monitor_agent,
-                            mbody=json.dumps(msg),
-                            mtype='chat')
+def ping_ejabberd_and_relay(self, jid_client):
+    """
+        Used to test both the relayserver and the ejabberd server
+        to determine which one is not functionnal.
+        Args:
+            jid_client: jid of the relay
+    """
+    server_jid = str(jid.JID(jid_client).domain)
+    name_ars_jid = str(jid.JID(jid_client).user)
 
+    rep = {'server': {'jid': server_jid, 'presence': 1},
+           'ars': {'jid': name_ars_jid, 'presence': 1}}
+    result = self.send_ping_relay(jid_client, self.check_timeout_ping)
 
 def ping_ejabberd_and_relay(self, jid_client):
     """
@@ -226,22 +195,20 @@ def ping_ejabberd_and_relay(self, jid_client):
            'ars' : { 'jid' : jidnamears, 'presense' : 1}}
     result = self.send_ping_relay(jid_client, self.check_timeout_ping)
     if result == 1:
-        return rep
+        pass
     elif result == -1:
-        rep['ars']['presense'] = 2
-        rep['server']['presense'] = 2
-        return rep
+        rep['ars']['presence'] = 2
+        rep['server']['presence'] = 2
     else:
+
         rep['ars']['presense'] = 0
         result = self.send_ping_relay(jidserveur, self.check_timeout_ping)
         if result == 1:
-            return rep
+            pass
         elif  result == -1:
-            rep['server']['presense'] = 2
-            return rep
+            rep['server']['presence'] = 2
         else:
-            rep['server']['presense'] = 0
-            return rep
+            rep['server']['presence'] = 0
 
 def send_ping_relay(self, jid,  timeout=5):
     """
@@ -253,17 +220,15 @@ def send_ping_relay(self, jid,  timeout=5):
     """
     logger.debug("send ping to %s " % jid)
     result = False
-    err = False
     try:
         result = self['xep_0199'].send_ping(jid, timeout=timeout)
         logger.debug("ars present %s" % (jid))
         return 1
     except IqError as e:
-        logger.error("test presense  %s :[%s]" % (jid, e.iq['error']['text']))
+        logger.error("test presence  %s :[%s]" % (jid, e.iq['error']['text']))
         return 0
     except IqTimeout:
         logger.error("No response from server.")
-        #logger.error("ARS TIMEOUT  ")
         return -1
 
 def display_server_status(self):
@@ -280,6 +245,7 @@ def display_server_status(self):
                                               status_ars['ars']['presence']))
     logger.debug("+-------------------------+-+-------------------------+-+")
 
+
 def read_conf_loadarscheck(objectxmpp):
     """
         Define all the variables and functions used in the plugin
@@ -288,9 +254,7 @@ def read_conf_loadarscheck(objectxmpp):
     """
     logger.debug("Initialisation plugin : %s " % plugin["NAME"])
     namefichierconf = plugin['NAME'] + ".ini"
-
-
-    #objectxmpp.ars_server_list_status = []
+    # objectxmpp.ars_server_list_status = []
     # for _ in range(15): logger.info("read_conf_loadarscheck")
 
     pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf )
@@ -321,6 +285,9 @@ def read_conf_loadarscheck(objectxmpp):
         else:
             # default values parameters
             objectxmpp.check_timeout_ping = 15
+    logger.info("check_ars_scan_interval = %s" % objectxmpp.check_ars_scan_interval)
+    logger.info("check_timeout_ping = %s" % objectxmpp.check_timeout_ping)
+    logger.info("ressource_scan_available = %s" % objectxmpp.ressource_scan_available)
 
         if ars_config.has_option("parameters", "update_table"):
             objectxmpp.update_table =  ars_config.getboolean('parameters',
@@ -368,7 +335,7 @@ def read_conf_loadarscheck(objectxmpp):
     ## declaration function send_ping_relay in object xmpp
     objectxmpp.send_ping_relay = types.MethodType(send_ping_relay, objectxmpp)
 
-    ## declaration function arscheck in object xmpp
+    # declaration function arscheck in object xmpp
     objectxmpp.arscheck = types.MethodType(arscheck, objectxmpp)
 
     ## declaration function display_server_status in object xmpp

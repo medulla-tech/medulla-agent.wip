@@ -93,15 +93,13 @@ class Glpi(object):
         self.sessionxmpp = None
         self.sessionglpi = None
         try:
-            #utilisation glpi base
-            self.engine_glpi = create_engine('mysql://%s:%s@%s:%s/%s'%( self.config.glpi_dbuser,
-                                                                    self.config.glpi_dbpasswd,
-                                                                    self.config.glpi_dbhost,
-                                                                    self.config.glpi_dbport,
-                                                                    self.config.glpi_dbname),
-                                        pool_recycle = self.config.dbpoolrecycle,
-                                        pool_size = self.config.dbpoolsize
-            )
+            self.engine_glpi = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.glpi_dbuser,
+                                                                         self.config.glpi_dbpasswd,
+                                                                         self.config.glpi_dbhost,
+                                                                         self.config.glpi_dbport,
+                                                                         self.config.glpi_dbname),
+                                             pool_recycle = self.config.dbpoolrecycle,
+                                             pool_size = self.config.dbpoolsize)
 
             try:
                 self._glpi_version = self.engine_glpi.execute('SELECT version FROM glpi_configs').fetchone().values()[0].replace(' ', '')
@@ -128,7 +126,8 @@ class Glpi(object):
             self.is_activated = glpi.is_activated
             return True
         except Exception as e:
-            self.logger.error("ERROR DE CONNECTION GLPI database is connecting")
+            self.logger.error("We failed to connect to the Glpi database.")
+            self.logger.error("Please verify your configuration")
             self.is_activated = False
             return False
 

@@ -240,6 +240,23 @@ class MscDatabase(DatabaseHelper):
             self.logger.error("Msc database connecting")
             return False
         except Exception as e:
+            self.logger.error("We failed to connect to the Msc database.")
+            self.logger.error("Please verify your configuration")
+            self.is_activated = False
+            return False
+
+            self.initMappers()
+            self.metadata.create_all()
+            # FIXME: should be removed
+            self.session = create_session(bind=self.engine_mscmmaster_base)
+            if self.session is not None:
+            # self.session = sessionmaker(bind=self.engine_xmppmmaster_base)
+                self.is_activated = True
+                self.logger.debug("Msc database connected")
+                return True
+            self.logger.error("Msc database connecting")
+            return False
+        except Exception as e:
             self.logger.error("ERROR DE CONNECTION Msc database is connecting")
             self.is_activated = False
             return False

@@ -103,14 +103,14 @@ class PkgsDatabase(DatabaseHelper):
         self.session = None
         try:
             self.engine_pkgsmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.pkgs_dbuser,
-                                                                                    self.config.pkgs_dbpasswd,
-                                                                                    self.config.pkgs_dbhost,
-                                                                                    self.config.pkgs_dbport,
-                                                                                    self.config.pkgs_dbname),
-                                                        pool_recycle=self.config.dbpoolrecycle,
-                                                        pool_size=self.config.dbpoolsize,
-                                                        pool_timeout=self.config.pkgs_dbpooltimeout,
-                                                        convert_unicode=True)
+                                                                                     self.config.pkgs_dbpasswd,
+                                                                                     self.config.pkgs_dbhost,
+                                                                                     self.config.pkgs_dbport,
+                                                                                     self.config.pkgs_dbname),
+                                                         pool_recycle=self.config.dbpoolrecycle,
+                                                         pool_size=self.config.dbpoolsize,
+                                                         pool_timeout=self.config.pkgs_dbpooltimeout,
+                                                         convert_unicode=True)
 
             self.metadata = MetaData(self.engine_pkgsmmaster_base)
             if not self.initTables():
@@ -128,7 +128,8 @@ class PkgsDatabase(DatabaseHelper):
             self.logger.error("Pkgs database connecting")
             return False
         except Exception as e:
-            self.logger.error("ERROR DE CONNECTION Pkgs database is connecting")
+            self.logger.error("We failed to connect to the Pkgs database.")
+            self.logger.error("Please verify your configuration")
             self.is_activated = False
             return False
 
