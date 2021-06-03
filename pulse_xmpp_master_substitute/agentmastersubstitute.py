@@ -93,36 +93,41 @@ def doTask( optsconsoledebug, optsdeamon, optfileconf):
     # Setup the command line arguments.
     tg = confParameter( optfileconf )
 
+    configuration_file = "/etc/pulse-xmpp-agent-substitute/agent_master_substitute_reg.ini.local"
     # activate module.
-
     if "glpi" in tg.plugins_list:
         logger.info("activate GLPI")
         if not Glpi().activate():
-            logger.error("Connection to GLPI base. verify GLPI parameters")
+            logger.error("We failed to connect the Glpi database.")
+            logger.error("Please verify your configuration in %s" % configuration_file)
             return
 
     if "xmpp" in tg.plugins_list:
         logger.info("activate XMPP")
         if not XmppMasterDatabase().activate():
-            logger.error("Connection to XMPPMASTER base. verify xmppdatabase parameters")
+            logger.error("We failed to connect the Xmpp database.")
+            logger.error("Please verify your configuration in %s" % configuration_file)
             return
 
     if "kiosk" in tg.plugins_list:
         logger.info("activate KIOSK")
         if not KioskDatabase().activate():
-            logger.error("Connection to kiosk base. verify kioskdatabase parameters")
+            logger.error("We failed to connect the Kiok database.")
+            logger.error("Please verify your configuration in %s" % configuration_file)
             return
 
     if "msc" in tg.plugins_list:
         logger.info("activate MSC")
         if not MscDatabase().activate():
-            logger.error("Connection to msc base. verify mscdatabase parameters")
+            logger.error("We failed to connect the Msc database.")
+            logger.error("Please verify your configuration in %s" % configuration_file)
             return
 
     if "pkgs" in tg.plugins_list:
         logger.info("activate PKGS")
         if not PkgsDatabase().activate():
-            logger.error("Connection to pkgs base. verify pkgsdatabase parameters")
+            logger.error("We failed to connect the Pkgs database.")
+            logger.error("Please verify your configuration in %s" % configuration_file)
             return
 
     xmpp = MUCBot( )

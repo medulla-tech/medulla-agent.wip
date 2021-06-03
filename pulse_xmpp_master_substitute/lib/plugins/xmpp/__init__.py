@@ -155,7 +155,7 @@ class XmppMasterDatabase(DatabaseHelper):
         if self.is_activated:
             return None
         self.logger = logging.getLogger()
-        self.logger.debug("xmpp activation")
+        self.logger.debug("Xmpp activation")
         self.engine = None
         #self.dbpoolrecycle = 60
         #self.dbpoolsize = 5
@@ -165,18 +165,19 @@ class XmppMasterDatabase(DatabaseHelper):
         # utilisation xmppmaster
         try:
             self.engine_xmppmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.xmpp_dbuser,
-                                                                                    self.config.xmpp_dbpasswd,
-                                                                                    self.config.xmpp_dbhost,
-                                                                                    self.config.xmpp_dbport,
-                                                                                    self.config.xmpp_dbname),
-                                                        pool_recycle=self.config.dbpoolrecycle,
-                                                        pool_size=self.config.dbpoolsize)
+                                                                                     self.config.xmpp_dbpasswd,
+                                                                                     self.config.xmpp_dbhost,
+                                                                                     self.config.xmpp_dbport,
+                                                                                     self.config.xmpp_dbname),
+                                                         pool_recycle=self.config.dbpoolrecycle,
+                                                         pool_size=self.config.dbpoolsize)
             self.Sessionxmpp = sessionmaker(bind=self.engine_xmppmmaster_base)
             self.is_activated = True
-            self.logger.debug("xmpp finish activation")
+            self.logger.debug("Xmpp activation done.")
             return True
         except Exception as e:
-            self.logger.error("ERROR DE CONNECTION XmppMaster database is connecting")
+            self.logger.error("We failed to connect to the Xmpp database.")
+            self.logger.error("Please verify your configuration")
             self.is_activated = False
             return False
 
@@ -5268,9 +5269,15 @@ class XmppMasterDatabase(DatabaseHelper):
             return -1
 
     @DatabaseHelper._sessionm
-    def update_Presence_Relay(self, session, jid, presense=0):
+    def update_Presence_Relay(self, session, jid, presence=0):
         """
-            update relay table presense
+            Update the presence in the relay and machine SQL Tables
+            Args:
+                session: The SQL Alchemy session
+                jid: jid of the relay to update
+                presence: Availability of the relay
+                          0: Set the relay as offline
+                          1: Set the relay as online
         """
         try:
             user = str(jid).split("@")[0]
@@ -5280,7 +5287,7 @@ class XmppMasterDatabase(DatabaseHelper):
                     SET
                         `enabled` = '%s'
                     WHERE
-                        `xmppmaster`.`machines`.`jid` like('%s@%%');""" % (presense,
+                        `xmppmaster`.`machines`.`jid` like('%s@%%');""" % (presence,
                                                                            user)
             session.execute(sql)
             sql = """UPDATE
@@ -5288,23 +5295,29 @@ class XmppMasterDatabase(DatabaseHelper):
                     SET
                         `enabled` = '%s'
                     WHERE
-                        `xmppmaster`.`relayserver`.`jid` like('%s@%%');""" % (presense,
+                        `xmppmaster`.`relayserver`.`jid` like('%s@%%');""" % (presence,
                                                                               user)
             session.execute(sql)
             session.commit()
             session.flush()
-        except Exception, e:
-            logging.getLogger().error(str(e))
-            logging.getLogger().error("\n%s" % (traceback.format_exc()))
+        except Exception as e:
+            logging.getLogger().error("Function : update_Presence_Relay, we got the error: " % str(e))
+            logging.getLogger().error("We encountered the backtrace: \n%s" % traceback.format_exc())
 
     @DatabaseHelper._sessionm
-    def update_reconf_mach_of_Relay_down(self, session, jid, reconf=1):
+    def is_machine_reconf_needed(self, session, jid, reconf=1):
         """
-            renitialise remote configuration
+            Tell if we need to start a reconfiguration of the machines assigned to a relay.
+            Args:
+                session: The SQL Alchemy session
+                jid: jid of the relay to update
+                reconf: Tell if we need to reconfigure the machines.
+                        0: No reconf needed
+                        1: A reconfigurtion is needed
         """
         try:
             user = str(jid).split("@")[0]
-            sql = """UPDATE
+            set_reconf = """UPDATE
                         `xmppmaster`.`machines`
                      SET
                         `need_reconf` = '%s'
@@ -5312,13 +5325,13 @@ class XmppMasterDatabase(DatabaseHelper):
                         `xmppmaster`.`machines`.`agenttype` like ("machine")
                         AND
                         `xmppmaster`.`machines`.`groupdeploy` like('%s@%%');""" % (reconf,
-                                                                           user)
-            session.execute(sql)
+                                                                                   user)
+            session.execute(set_reconf)
             session.commit()
             session.flush()
-        except Exception, e:
-            logging.getLogger().error(str(e))
-            logging.getLogger().error("\n%s" % (traceback.format_exc()))
+        except Exception as e:
+            logging.getLogger().error("Function : is_machine_reconf_needed, we got the error: " % str(e))
+            logging.getLogger().error("We encountered the backtrace: \n%s" % traceback.format_exc())
 
 
     @DatabaseHelper._sessionm
