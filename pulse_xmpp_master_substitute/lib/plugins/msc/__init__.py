@@ -661,6 +661,12 @@ class MscDatabase(DatabaseHelper):
         return result
 
     def deployxmppscheduler(self, login, min , max, filt):
+        """
+            Cette fonction renvoie les deployements scheduler sur msc
+        """
+        listuser = []
+        if isinstance(login, list):
+            listuser = [ '"%s"'%x.strip() for x in login if x.strip() != ""]
         datenow = datetime.datetime.now()
         sqlselect="""
             SELECT
@@ -694,16 +700,22 @@ class MscDatabase(DatabaseHelper):
             WHERE
             commands.start_date > '%s'
             AND
-            """ % datenow.strftime('%Y-%m-%d %H:%M:%S')
+            """% datenow.strftime('%Y-%m-%d %H:%M:%S')
         sqlfilter = """
             phase.name = 'execute'
                 AND
                     phase.state = 'ready'"""
 
         if login:
-            sqlfilter = sqlfilter + """
-            AND
-                commands.creator = '%s'""" % login
+            if listuser:
+                # login to list 
+                sqlfilter = sqlfilter + """
+                AND
+                    commands.creator in (%s)""" % ",".join(listuser)
+            else:
+                sqlfilter = sqlfilter + """
+                AND
+                    commands.creator = '%s'""" % login
 
         if filt:
             sqlfilter = sqlfilter + """
@@ -712,7 +724,7 @@ class MscDatabase(DatabaseHelper):
             OR
             commands.creator like %%%s%%
             OR
-            commands.start_date like %%%s%%)""" % (filt, filt, filt)
+            commands.start_date like %%%s%%)"""%(filt,filt,filt)
 
         reqsql = sqlselect + sqlfilter
 
@@ -720,7 +732,7 @@ class MscDatabase(DatabaseHelper):
         if min and max:
             sqllimit = """
                 LIMIT %d
-                OFFSET %d""" % (int(max) - int(min), int(min))
+                OFFSET %d"""%(int(max)-int(min), int(min))
             reqsql = reqsql + sqllimit
 
         sqlgroupby = """
@@ -728,7 +740,7 @@ class MscDatabase(DatabaseHelper):
 
         reqsql = reqsql + sqlgroupby+";"
 
-        # print reqsql
+        ###### print reqsql
 
         sqlselect="""
             Select COUNT(nb) AS TotalRecords from(
@@ -750,15 +762,15 @@ class MscDatabase(DatabaseHelper):
                 WHERE
                     commands.start_date > '%s'
             AND
-            """ % datenow.strftime('%Y-%m-%d %H:%M:%S')
-        reqsql1 = sqlselect + sqlfilter + sqllimit + sqlgroupby + ") as tmp;"
-        result = {}
-        resulta = self.session.execute(reqsql)
-        resultb = self.session.execute(reqsql1)
+            """% datenow.strftime('%Y-%m-%d %H:%M:%S')
+        reqsql1 = sqlselect + sqlfilter + sqllimit + sqlgroupby + ") as tmp;";
+        result={}
+        resulta = self.db.execute(reqsql)
+        resultb = self.db.execute(reqsql1)
         sizereq = [x for x in resultb][0][0]
         result['lentotal'] = sizereq
         result['min'] = int(min)
-        result['nb'] = (int(max) - int(min))
+        result['nb']  = (int(max)-int(min))
         result['tabdeploy'] = {}
         inventoryuuid = []
         host = []
@@ -766,6 +778,7 @@ class MscDatabase(DatabaseHelper):
         pathpackage = []
         start = []
         end = []
+        tabdeploy = {}
         creator = []
         title = []
         groupid = []
@@ -785,19 +798,20 @@ class MscDatabase(DatabaseHelper):
             titledeploy.append(x.titledeploy)
             groupid.append(x.GRP)
             macadress.append(x.target_target_macaddr)
-        result['tabdeploy']['nbmachine'] = nbmachine
-        result['tabdeploy']['host'] = host
-        result['tabdeploy']['inventoryuuid'] = inventoryuuid
-        result['tabdeploy']['command'] = command
-        result['tabdeploy']['pathpackage'] = pathpackage
-        result['tabdeploy']['start'] = start
+        result['tabdeploy']['nbmachine']=nbmachine
+        result['tabdeploy']['host']=host
+        result['tabdeploy']['inventoryuuid']=inventoryuuid
+        result['tabdeploy']['command']=command
+        result['tabdeploy']['pathpackage']=pathpackage
+        result['tabdeploy']['start']=start
         result['tabdeploy']['end'] = end
-        result['tabdeploy']['creator'] = creator
+        result['tabdeploy']['creator']=creator
         result['tabdeploy']['title'] = title
         result['tabdeploy']['macadress'] = macadress
         result['tabdeploy']['groupid'] = groupid
         result['tabdeploy']['titledeploy'] = titledeploy
         return result
+
 
     def updategroup(self, group):
         session = create_session()
@@ -909,11 +923,15 @@ class MscDatabase(DatabaseHelper):
         """
             select deploys not deployed
         """
-
+        list_login=[]
+        if login:
+            if isinstance(login, (tuple, list)):
+                list_login=[x.strip() for x in login if x.strip() != ""]
+            else :
+                list_login.append(login)
         datenow = datetime.datetime.now()
         delta = datetime.timedelta(seconds=intervalsearch)
         datereduced = datenow - delta
-
         query = session.query(Commands.id,
                               func.count(Commands.id).label('nb_machine'),
                               Commands.title,
@@ -931,39 +949,52 @@ class MscDatabase(DatabaseHelper):
         .join(CommandsOnHostPhase, CommandsOnHostPhase.fk_commands_on_host == CommandsOnHost.id)\
         .filter(CommandsOnHostPhase.name == 'upload')\
         .filter(CommandsOnHostPhase.state == 'ready')\
-        .filter(Commands.end_date > datereduced)
+        .filter(Commands.end_date > datereduced)\
+        .filter(Commands.type != 2)
 
-        if filt:
-            query = query.filter(or_(Commands.title.like("%%%s%%" % filt),
-                                     Commands.creator.like("%%%s%%" % filt),
-                                     Commands.package_id.like("%%%s%%" % filt),
-                                     Commands.start_date.like("%%%s%%" % filt),
-                                     Commands.end_date.like("%%%s%%" % filt),
-                                     CommandsOnHost.id.like("%%%s%%" % filt),
-                                     Target.target_name.like("%%%s%%" % filt),
-                                     Target.target_uuid.like("%%%s%%" % filt),
-                                     Target.id_group.like("%%%s%%" % filt),
-                                     Target.target_macaddr.like("%%%s%%" % filt)))
-
+        if list_login and  "root" not in list_login:
+            query = query.filter(Commands.creator.in_(list_login))
+            if filt:
+                query = query.filter(or_(Commands.title.like("%%%s%%"%filt),
+                                        Commands.package_id.like("%%%s%%"%filt),
+                                        Commands.start_date.like("%%%s%%"%filt),
+                                        Commands.end_date.like("%%%s%%"%filt),
+                                        CommandsOnHost.id.like("%%%s%%"%filt),
+                                        Target.target_name.like("%%%s%%"%filt),
+                                        Target.target_uuid.like("%%%s%%"%filt),
+                                        Target.id_group.like("%%%s%%"%filt),
+                                        Target.target_macaddr.like("%%%s%%"%filt)))
+        else:
+            if filt:
+                query = query.filter(or_(Commands.title.like("%%%s%%"%filt),
+                                        Commands.creator.like("%%%s%%"%filt),
+                                        Commands.package_id.like("%%%s%%"%filt),
+                                        Commands.start_date.like("%%%s%%"%filt),
+                                        Commands.end_date.like("%%%s%%"%filt),
+                                        CommandsOnHost.id.like("%%%s%%"%filt),
+                                        Target.target_name.like("%%%s%%"%filt),
+                                        Target.target_uuid.like("%%%s%%"%filt),
+                                        Target.id_group.like("%%%s%%"%filt),
+                                        Target.target_macaddr.like("%%%s%%"%filt)))
         query = query.group_by(Commands.id, CommandsOnHostPhase.state)
         nb = query.count()
-        query = query.offset(int(min)).limit(int(max) - int(min))
+        query = query.offset(int(min)).limit(int(max)-int(min))
         res = query.all()
 
         result = {'total': nb, 'elements':[]}
         for element in res:
 
             result['elements'].append({'cmd_id': element[0],
-                                       'nb_machines': element[1],
-                                       'package_name': element[2],
-                                       'login': element[3],
-                                       'package_uuid': element[4],
-                                       'date_start': element[5],
-                                       'date_end': element[6],
-                                       'machine_name': element[8],
-                                       'uuid_inventory': element[9],
-                                       'gid': element[10],
-                                       'mac_address': element[11]})
+                           'nb_machines': element[1],
+                           'package_name': element[2],
+                           'login': element[3],
+                           'package_uuid': element[4],
+                           'date_start': element[5],
+                           'date_end': element[6],
+                           'machine_name':element[8],
+                           'uuid_inventory':element[9],
+                           'gid': element[10],
+                           'mac_address': element[11]})
         return result
 
     @DatabaseHelper._sessionm

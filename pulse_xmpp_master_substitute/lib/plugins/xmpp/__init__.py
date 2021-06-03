@@ -3746,17 +3746,7 @@ class XmppMasterDatabase(DatabaseHelper):
         session.query(Deploy).filter(Deploy.group_uuid == numgrp).delete()
         session.commit()
         session.flush()
-       
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
     @DatabaseHelper._sessionm    
     def get_lit_all_user(self, session, login ):
         """
@@ -3792,11 +3782,16 @@ class XmppMasterDatabase(DatabaseHelper):
         else:
             return []
 
-    # ## JFKJFK get_deploy_by_team_user_recent
-    
     @DatabaseHelper._sessionm
-    def get_deploy_by_team_user_recent(self, session, login , state, duree, min=None , max=None, filt=None):
-        pulse_usersid = self.get_lit_all_user(login) 
+    def getdeploy_by_team_user_recent(self,
+                                       session,
+                                       login ,
+                                       state,
+                                       duree,
+                                       min=None,
+                                       max=None,
+                                       filt=None):
+        pulse_usersid = self.get_lit_all_user(login)
         if pulse_usersid <= 1:
             return self.getdeploybyuserrecent(login , state, duree, min=None , max=None, filt=None)
                
@@ -3848,7 +3843,6 @@ class XmppMasterDatabase(DatabaseHelper):
         ##deploylog = deploylog.add_column(func.count(Deploy.title))
         if min is not None and max is not None:
             deploylog = deploylog.offset(int(min)).limit(int(max)-int(min))
-            
         result = deploylog.all()
         
         
@@ -3902,7 +3896,8 @@ class XmppMasterDatabase(DatabaseHelper):
             ret['tabdeploy']['jid_relay'].append(linedeploy.jid_relay)
             ret['tabdeploy']['title'].append(linedeploy.title)
         return ret
-
+        
+        
     @DatabaseHelper._sessionm
     def getdeploybyuserrecent(self, session, login , state, duree, min=None, max=None, filt=None):
         deploylog = session.query(Deploy)
