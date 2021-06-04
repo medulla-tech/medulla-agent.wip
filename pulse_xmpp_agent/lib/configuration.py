@@ -98,6 +98,7 @@ def alternativeclusterconnection(conffile, data):
     #for arsdataconection in data:
         #if ipfromdns(str(arsdataconection[0])) != "" and check_exist_ip_port(ipfromdns(str(arsdataconection[0])), str(arsdataconection[1])):
             #print ipfromdns(str(arsdataconection[0]))
+    logger.info("rewrite file %s cluster.ini for alternative connection" % conffile)
     with open(conffile, 'w') as configfile:
         if len(data) != 0:
             listalternative = [str(x[2]) for x in data]
