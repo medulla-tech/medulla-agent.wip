@@ -92,7 +92,8 @@ class MUCBot(sleekxmpp.ClientXMPP):
         namefileconfigurationtmp = conffilenametmp(self.config.agenttype)
         logging.log(DEBUGPULSE,"copy  %s %s" % (namefileconfiguration,
                                                 namefileconfigurationtmp))
-        shutil.copyfile(namefileconfiguration, namefileconfigurationtmp)
+        if os.path.exists(namefileconfiguration):
+            shutil.copyfile(namefileconfiguration, namefileconfigurationtmp)
 
         ### update level log for sleekxmpp
         handler_sleekxmpp = logging.getLogger('sleekxmpp')
@@ -397,7 +398,8 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                 filesyncthing = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                             "baseconfigsyncthing.xml")
                                 logging.log(DEBUGPULSE, "copy configuration syncthing")
-                                shutil.copyfile(self.fichierconfsyncthing, filesyncthing)
+                                if os.path.exists(self.fichierconfsyncthing):
+                                    shutil.copyfile(self.fichierconfsyncthing, filesyncthing)
                                 logger.debug("%s"%json.dumps(self.syncthing.config, indent =4))
                                 if logging.getLogger().level == logging.DEBUG:
                                     dataconf = json.dumps(self.syncthing.config, indent =4)
@@ -437,9 +439,11 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                         data['data'][0][2],
                                         data['data'][0][3])
                         try:
+
+                            if os.path.exists(conffilename("cluster")):
+                                #save cluster.ini to clustertmp.ini
+                                shutil.copy(conffilename("cluster"), conffilenametmp("cluster"))
                             #write alternative configuration
-                            alternativeclusterconnection(conffilenametmp("cluster"),
-                                                         data['data'])
                             alternativeclusterconnection(conffilename("cluster"),
                                                          data['data'])
                             confaccountclear={  "action": "resultcleanconfaccount",
@@ -458,7 +462,8 @@ class MUCBot(sleekxmpp.ClientXMPP):
                             logger.debug("rotate configuration")
                             rotation_file(namefileconfiguration)
                             logger.debug("write new configuration")
-                            shutil.copyfile(namefileconfigurationtmp,namefileconfiguration)
+                            if os.path.exists(namefileconfigurationtmp):
+                                shutil.copyfile(namefileconfigurationtmp,namefileconfiguration)
                             logger.debug("make finger print conf file")
                             refreshfingerprintconf(opts.typemachine)
                         except Exception:
