@@ -264,6 +264,14 @@ class confParameter:
         if confiobject.has_option("pkgsdatabase", "pkgs_dbpasswd"):
             self.pkgs_dbpasswd = confiobject.get('pkgsdatabase', 'pkgs_dbpasswd')
 
+        self.xmpp_dbpoolrecycle = 3600
+        if confiobject.has_option("pkgsdatabase", "pkgs_dbpoolrecycle"):
+            self.pkgs_dbpoolrecycle = confiobject.get('pkgsdatabase', 'pkgs_dbpoolrecycle')
+
+        self.pkgs_dbpoolsize = 60
+        if confiobject.has_option("pkgsdatabase", "pkgs_dbpoolsize"):
+            self.pkgs_dbpoolsize = confiobject.get('pkgsdatabase', 'pkgs_dbpoolsize')
+
     def readConfxmpp(self, confiobject):
         self.xmpp_dbhost = "localhost"
         if confiobject.has_option("xmppdatabase", "xmpp_dbhost"):
