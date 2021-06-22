@@ -199,6 +199,15 @@ class confParameter:
         if confiobject.has_option("kioskdatabase", "kiosk_dbpasswd"):
             self.kiosk_dbpasswd = confiobject.get('kioskdatabase', 'kiosk_dbpasswd')
 
+        self.kiosk_dbpoolrecycle = 3600
+        if confiobject.has_option("kioskdatabase", "kiosk_dbpoolrecycle"):
+            self.xmpp_dbpoolrecycle = confiobject.get('kioskdatabase', 'kiosk_dbpoolrecycle')
+
+        self.kiosk_dbpoolsize = 60
+        if confiobject.has_option("kioskdatabase", "kiosk_dbpoolsize"):
+            self.xmpp_dbpoolsize = confiobject.get('kioskdatabase', 'kiosk_dbpoolsize')
+
+
     def readConfmsc(self, confiobject):
         self.msc_dbpooltimeout = 30
         if confiobject.has_option("mscdatabase", "msc_dbpooltimeout"):
