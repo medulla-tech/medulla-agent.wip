@@ -264,7 +264,7 @@ class confParameter:
         if confiobject.has_option("pkgsdatabase", "pkgs_dbpasswd"):
             self.pkgs_dbpasswd = confiobject.get('pkgsdatabase', 'pkgs_dbpasswd')
 
-        self.xmpp_dbpoolrecycle = 3600
+        self.pkgs_dbpoolrecycle = 3600
         if confiobject.has_option("pkgsdatabase", "pkgs_dbpoolrecycle"):
             self.pkgs_dbpoolrecycle = confiobject.get('pkgsdatabase', 'pkgs_dbpoolrecycle')
 
