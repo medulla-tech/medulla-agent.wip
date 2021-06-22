@@ -312,6 +312,15 @@ class confParameter:
         if confiobject.has_option("glpidatabase", "glpi_dbpasswd"):
             self.glpi_dbpasswd = confiobject.get('glpidatabase', 'glpi_dbpasswd')
 
+        self.glpi_dbpoolrecycle = 3600
+        if confiobject.has_option("glpidatabase", "glpi_dbpoolrecycle"):
+            self.glpi_dbpoolrecycle = confiobject.get('glpidatabase', 'glpi_dbpoolrecycle')
+
+        self.glpi_dbpoolsize = 60
+        if confiobject.has_option("glpidatabase", "glpi_dbpoolsize"):
+            self.glpi_dbpoolsize = confiobject.get('glpidatabase', 'glpi_dbpoolsize')
+
+
         try:
             self.activeProfiles = confiobject.get('glpi', 'active_profiles').split(' ')
         except:
