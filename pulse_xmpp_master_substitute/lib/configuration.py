@@ -232,6 +232,14 @@ class confParameter:
         if confiobject.has_option("mscdatabase", "msc_dbpasswd"):
             self.msc_dbpasswd = confiobject.get('mscdatabase', 'msc_dbpasswd')
 
+        self.msc_dbpoolrecycle = 3600
+        if confiobject.has_option("mscdatabase", "msc_dbpoolrecycle"):
+            self.xmpp_dbpoolrecycle = confiobject.get('mscdatabase', 'msc_dbpoolrecycle')
+
+        self.msc_dbpoolsize = 60
+        if confiobject.has_option("mscdatabase", "msc_dbpoolsize"):
+            self.xmpp_dbpoolsize = confiobject.get('mscdatabase', 'msc_dbpoolsize')
+
     def readConfpkgs(self, confiobject):
         self.pkgs_dbpooltimeout = 30
         if confiobject.has_option("pkgsdatabase", "pkgs_dbpooltimeout"):
