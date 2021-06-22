@@ -268,6 +268,14 @@ class confParameter:
         if confiobject.has_option("xmppdatabase", "xmpp_dbpasswd"):
             self.xmpp_dbpasswd = confiobject.get('xmppdatabase', 'xmpp_dbpasswd')
 
+        self.xmpp_dbpoolrecycle = 3600
+        if confiobject.has_option("xmppdatabase", "xmpp_dbpoolrecycle"):
+            self.xmpp_dbpoolrecycle = confiobject.get('xmppdatabase', 'xmpp_dbpoolrecycle')
+
+        self.xmpp_dbpoolsize = 60
+        if confiobject.has_option("xmppdatabase", "xmpp_dbpoolsize"):
+            self.xmpp_dbpoolsize = confiobject.get('xmppdatabase', 'xmpp_dbpoolsize')
+
     def readConfglpi(self, confiobject):
         self.inventory_url = "http://localhost:9999/"
         if confiobject.has_option("glpi", "inventory_server_url"):
