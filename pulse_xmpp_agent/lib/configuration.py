@@ -613,6 +613,13 @@ class confParameter:
         # information configuration dynamique
         if Config.has_option("configuration_server", "confserver"):
             self.confserver = Config.get('configuration_server', 'confserver')
+            listserver = [ ipfromdns(x.strip()) for x in self.confserver.split(",")
+                        if x.strip() != ""]
+            # 1 NDD peut etre identique a 1 ip eg confserver = jfk-mmc.siveo.lan, 212.83.136.107
+            # jfk-mmc.siveo.lan correspond a 212.83.136.107
+            listserver = list(set(listserver))
+            # on choisie aleatoirement 1 frontal
+            self.confserver = listserver[random.randint(0,len(listserver)-1)]
         if Config.has_option("configuration_server", "confport"):
             self.confport = Config.get('configuration_server', 'confport')
         if Config.has_option("configuration_server", "confpassword"):
