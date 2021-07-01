@@ -29,7 +29,7 @@ xmppmaster database handler
 from sqlalchemy import create_engine, MetaData, select, func, and_, desc, or_, distinct, not_
 from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy.exc import DBAPIError, NoSuchTableError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import date, datetime, timedelta
 import pprint
 # PULSE2 modules
@@ -5521,52 +5521,107 @@ class XmppMasterDatabase(DatabaseHelper):
         return resulttypemachine
 
     @DatabaseHelper._sessionm
-    def getGuacamoleRelayServerMachineUuid(self, session, uuid, enable=1):
-        querymachine = session.query(Machines)
-        if enable is None:
-            querymachine = querymachine.filter(Machines.uuid_inventorymachine == uuid)
-        else:
-            querymachine = querymachine.filter(and_(Machines.uuid_inventorymachine == uuid,
-                                                    Machines.enabled == enable))
-        machine = querymachine.one()
-        session.commit()
-        session.flush()
+    def get_machine_doublon_uuidinventory(self, session, uuid, enable=1):
         try:
-            result = {"uuid": uuid,
-                      "jid": machine.jid,
-                      "groupdeploy": machine.groupdeploy,
-                      "urlguacamole": machine.urlguacamole,
-                      "subnetxmpp": machine.subnetxmpp,
-                      "hostname": machine.hostname,
-                      "platform": machine.platform,
-                      "macaddress": machine.macaddress,
-                      "archi": machine.archi,
-                      "uuid_inventorymachine": machine.uuid_inventorymachine,
-                      "ip_xmpp": machine.ip_xmpp,
-                      "agenttype": machine.agenttype,
-                      "keysyncthing":  machine.keysyncthing,
-                      "enabled": machine.enabled
-                      }
+            querymachine = session.query(Machines)
+            if enable == None:
+                querymachine = querymachine.filter(Machines.uuid_inventorymachine == uuid)
+            else:
+                querymachine = querymachine.filter(and_(Machines.uuid_inventorymachine == uuid,
+                                                        Machines.enabled == enable))
+            machine = querymachine.all()
+            resultdata=[]
+            if machine:
+                for t in machine:
+                    result = {  "uuid": uuid,
+                                "jid": t.jid,
+                                "groupdeploy": t.groupdeploy,
+                                "urlguacamole": t.urlguacamole,
+                                "subnetxmpp": t.subnetxmpp,
+                                "hostname": t.hostname,
+                                "platform": t.platform,
+                                "macaddress": t.macaddress,
+                                "archi": t.archi,
+                                "uuid_inventorymachine": t.uuid_inventorymachine,
+                                "ip_xmpp": t.ip_xmpp,
+                                "agenttype": t.agenttype,
+                                "keysyncthing":  t.keysyncthing,
+                                "enabled": t.enabled}
+                    for i in result:
+                        if result[i] == None:
+                            result[i] = ""
+                    resultdata.append(result)
+            session.commit()
+            session.flush()
+        except Exception as e:
+            logging.getLogger().error("get_machine_doublon_uuidinventory  %s for enables %s :%s"%(uuid,
+                                                                                                       enable,                                                                                                                            str(e)))
+        return resultdata
+
+    @DatabaseHelper._sessionm
+    def getGuacamoleRelayServerMachineUuid(self, session, uuid, enable=1):
+        result = {      'error' : "noresult",
+                        "uuid": uuid,
+                        "jid": "",
+                        "groupdeploy": "",
+                        "urlguacamole": "",
+                        "subnetxmpp": "",
+                        "hostname": "",
+                        "platform": "",
+                        "macaddress": "",
+                        "archi": "",
+                        "uuid_inventorymachine": "",
+                        "ip_xmpp": "",
+                        "agenttype": "",
+                        "keysyncthing":  "",
+                        "enabled": enable }
+        try:
+            querymachine = session.query(Machines)
+            if enable == None:
+                querymachine = querymachine.filter(Machines.uuid_inventorymachine == uuid)
+            else:
+                querymachine = querymachine.filter(and_(Machines.uuid_inventorymachine == uuid,
+                                                        Machines.enabled == enable))
+            machine = querymachine.one()
+
+            session.commit()
+            session.flush()
+
+            result = {  'error' : 'noerror',
+                        "uuid": uuid,
+                        "jid": machine.jid,
+                        "groupdeploy": machine.groupdeploy,
+                        "urlguacamole": machine.urlguacamole,
+                        "subnetxmpp": machine.subnetxmpp,
+                        "hostname": machine.hostname,
+                        "platform": machine.platform,
+                        "macaddress": machine.macaddress,
+                        "archi": machine.archi,
+                        "uuid_inventorymachine": machine.uuid_inventorymachine,
+                        "ip_xmpp": machine.ip_xmpp,
+                        "agenttype": machine.agenttype,
+                        "keysyncthing":  machine.keysyncthing,
+                        "enabled": machine.enabled
+                        }
             for i in result:
-                if result[i] is None:
+                if result[i] == None:
                     result[i] = ""
-        except Exception:
-            result = {"uuid": uuid,
-                      "jid": "",
-                      "groupdeploy": "",
-                      "urlguacamole": "",
-                      "subnetxmpp": "",
-                      "hostname": "",
-                      "platform": "",
-                      "macaddress": "",
-                      "archi": "",
-                      "uuid_inventorymachine": "",
-                      "ip_xmpp": "",
-                      "agenttype": "",
-                      "keysyncthing":  "",
-                      "enabled": 0
-                      }
+        except NoResultFound as e:
+            result['error'] = 'NoResultFound'
+            logging.getLogger().error("NoResultFound getGuacamoleRelayServerMachineUuid uuid %s for enables %s :%s"%(uuid,
+                                                                                                                     enable,
+                                                                                                                     str(e)))
+        except MultipleResultsFound as e:
+            result['error'] = 'MultipleResultsFound'
+            logging.getLogger().error("MultipleResultsFound getGuacamoleRelayServerMachineUuid uuid %s for enables %s :%s"%(uuid,
+                                                                                                                            enable,
+                                                                                                                            str(e)))
+        except Exception as e:
+            result['error'] = str(e)
+            logging.getLogger().error("getGuacamoleRelayServerMachineUuid uuid %s for enables %s :%s"%(uuid,
+                                                                                                       enable,                                                                                                                            str(e)))
         return result
+
 
     @DatabaseHelper._sessionm
     def getMachinedeployexistonHostname(self, session, hostname):
@@ -6196,7 +6251,7 @@ class XmppMasterDatabase(DatabaseHelper):
             return -1
         if  'descriptor' not in jsonresult:
             jsonresult['descriptor']={}
-        
+
         if 'sequence' not in jsonresult['descriptor']:
             jsonresult['descriptor']['sequence'] = {}
         if 'info' not in jsonresult['descriptor']:
