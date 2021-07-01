@@ -489,7 +489,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
 
     except Exception:
@@ -503,7 +503,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
         try:
             result = XmppMasterDatabase().jidrelayserverforip(objectxmpp.assessor_agent_serverip)
@@ -523,7 +523,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                             '',
                                             'Configuration | Notify | Assessor',
                                             '',
-                                            '',
+                                            objectxmpp.boundjid.bare,
                                             objectxmpp.boundjid.bare)
     try:
         try:
@@ -558,7 +558,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Notify | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
             XmppMasterDatabase().setlogxmpp(msglog,
                                         "conf",
@@ -569,7 +569,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Notify | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
             return
         z = [listars[x] for x in listars]
@@ -639,7 +639,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Notify | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
         XmppMasterDatabase().setlogxmpp("Error: %s" % (traceback.format_exc()),
                                         "conf",
@@ -650,7 +650,7 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                                         '',
                                         'Configuration | Notify | Assessor',
                                         '',
-                                        '',
+                                        objectxmpp.boundjid.bare,
                                         objectxmpp.boundjid.bare)
 def msg_log(msg_header, hostname, user, result, objectxmpp, data):
     if data['machine'].split(".")[0] in objectxmpp.assessor_agent_showinfomachine:
