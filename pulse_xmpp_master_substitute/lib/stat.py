@@ -54,13 +54,13 @@ class statcallplugin:
             self.param["count_%s_in_time"%self.name]+=1
             self.param["count_%s_up_time"%self.name]+=1
             if timeseconde > self.param["time_between_checks_%s"%self.name]:
-                logger.debug("The plugin %s have called by %s "\
+                logger.info("The plugin %s have called by %s "\
                          "%s times in %s secondes (rate = %s)"%(self.name,
                                                                 self.obj.boundjid.bare,
                                                                 self.param["count_%s_in_time"%self.name],
                                                                 timeseconde,
                                                                 self.param["count_%s_in_time"%self.name]/timeseconde))
-                logger.debug("uptime call : %s times in %s secondes (rate = %s)"%(
+                logger.info("uptime call : %s times in %s secondes (rate = %s)"%(
                                                                 self.param["count_%s_up_time"%self.name],
                                                                 timesecondeall,
                                                                 self.param["count_%s_up_time"%self.name]/timesecondeall))
