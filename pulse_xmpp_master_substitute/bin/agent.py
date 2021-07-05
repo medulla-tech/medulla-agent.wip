@@ -78,7 +78,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
 
         logger.debug("### CREATION MANAGER PLUGINSCHULING ##########")
         # on definie le type de l agent
-        self.config.agenttype = 'substitut'
+        self.config.agenttype = 'substitute'
         self.manage_scheduler = manage_scheduler(self)
         self.schedule('schedulerfunction',
                             10 ,
