@@ -39,6 +39,8 @@ import traceback
 import signal
 from lib.plugins.xmpp import XmppMasterDatabase
 from lib.plugins.glpi import Glpi
+# gestion de plugin scheduler dans les substitutes
+from lib.manage_scheduler import manage_scheduler
 
 import random
 
@@ -73,6 +75,16 @@ class MUCBot(sleekxmpp.ClientXMPP):
 
         logging.log(DEBUGPULSE,"Starting Master sub (%s)" %(self.config.jidmastersubstitute))
         sleekxmpp.ClientXMPP.__init__(self, jid.JID(self.config.jidmastersubstitute), self.config.passwordconnection)
+
+        logger.debug("### CREATION MANAGER PLUGINSCHULING ##########")
+        # on definie le type de l agent
+        self.config.agenttype = 'substitut'
+        self.manage_scheduler = manage_scheduler(self)
+        self.schedule('schedulerfunction',
+                            10 ,
+                            self.schedulerfunction,
+                            repeat=True)
+        logger.debug("##############################################")
 
         ####################Update agent from MAster#############################
         #self.pathagent = os.path.join(os.path.dirname(os.path.realpath(__file__)))
@@ -234,6 +246,9 @@ class MUCBot(sleekxmpp.ClientXMPP):
             self.send_message(  mto = jid.JID(self.config.sub_logger),
                                 mbody=json.dumps(msgbody),
                                 mtype='chat')
+                                mtype='chat')
+    def schedulerfunction(self):
+        self.manage_scheduler.process_on_event()
 
     def register(self, iq):
         """ This function is called for automatic registation """
