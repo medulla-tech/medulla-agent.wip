@@ -44,9 +44,8 @@ def schedule_main(objectxmpp):
     logging.getLogger().debug("============================================")
     try:
         logging.getLogger().debug("%s " % objectxmpp.boundjid.bare)
-        result = simplecommand("ejabberdctl process_rosteritems delete none none any %s" % objectxmpp.boundjid.bare)
-        
-        logging.getLogger().debug("cmd = ejabberdctl process_rosteritems delete none none any %s" % objectxmpp.boundjid.bare)
+        result = simplecommand("ejabberdctl process_rosteritems delete none:to none %s any" % objectxmpp.boundjid.bare)
+        logging.getLogger().debug("cmd = ejabberdctl process_rosteritems delete none:to none %s any" % objectxmpp.boundjid.bare)
         logging.getLogger().debug("code return command = %s"% result['code'])
         #logging.getLogger().debug("code return command = %s"% json.dumps(result['result'], indent=4))
         logging.getLogger().debug("code return command = %s"% result['result'][0])
