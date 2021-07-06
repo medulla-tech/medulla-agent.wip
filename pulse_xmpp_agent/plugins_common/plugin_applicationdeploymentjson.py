@@ -1974,6 +1974,12 @@ def takeresource(datasend, objectxmpp, sessionid):
         datasendl = datasend
 
     logger.debug('Taking resource : %s'%datasendl['data']['jidrelay'])
+    if 'login' in datasendl['data']:
+        datasendl['data']['advanced']['login'] = datasendl['data']['login']
+    else:
+        if 'advanced' in datasendl['data']:
+            if 'login' not in datasendl['data']['advanced']:
+                datasendl['data']['advanced']['login'] = "master"
     msgresource = {'action': "cluster",
                     'sessionid': sessionid,
                     'data':  {"subaction" : "takeresource",
@@ -2003,6 +2009,14 @@ def removeresource(datasend, objectxmpp, sessionid):
         datasendl['data'] = datasend
     else:
         datasendl = datasend
+
+    if 'login' in datasendl['data']:
+        datasendl['data']['advanced']['login'] = datasendl['data']['login']
+    else:
+        if 'advanced' in datasendl['data']:
+            if 'login' not in datasendl['data']['advanced']:
+                datasendl['data']['advanced']['login'] = "master"
+
     logger.debug('Restoring resource : %s'%datasendl['data']['jidrelay'])
     msgresource = {'action': "cluster",
                     'sessionid': sessionid,
