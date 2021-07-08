@@ -351,8 +351,9 @@ def finger_print_md5(file):
 def initialisation_packages_id(pkgsdata):
     result = pkgsdata.fetching("""SELECT uuid, id FROM pkgs.packages;""")
     ret={}
-    for t in result:
-        ret[t[0]] = int(t[1])
+    if result is not None:
+        for t in result:
+            ret[t[0]] = int(t[1])
     return ret
 
 def create_or_update_pkgs_shares_ars_web(xmppobject,
