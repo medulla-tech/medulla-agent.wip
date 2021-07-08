@@ -154,6 +154,7 @@ class XmppMasterDatabase(DatabaseHelper):
     def activate(self):
         if self.is_activated:
             return None
+        Base = automap_base()
         self.logger = logging.getLogger()
         self.logger.debug("Xmpp activation")
         self.engine = None
@@ -193,6 +194,11 @@ class XmppMasterDatabase(DatabaseHelper):
                                                         pool_recycle=self.poolrecycle,
                                                         pool_size=self.poolsize)
             self.Sessionxmpp = sessionmaker(bind=self.engine_xmppmmaster_base)
+            Base.prepare(self.engine_xmppmmaster_base, reflect=True)
+            # add table auto_base
+            self.Update_machine = Base.classes.update_machine
+            self.Ban_machine = Base.classes.ban_machine
+
             self.is_activated = True
             self.logger.debug("Xmpp activation done.")
             return True
@@ -7748,3 +7754,153 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
             resultlist.append(tmpdict)
         logging.getLogger().error(resultlist)
         return resultlist
+
+    # ----------udate machine scheduling
+
+    def __updatemachine(self, object_update_machine):
+        try:
+            ret = { 'id' : object_update_machine.id,
+                    'jid' : object_update_machine.jid,
+                    'ars' : object_update_machine.ars,
+                    'status' : object_update_machine.status,
+                    'descriptor' : object_update_machine.descriptor,
+                    'md5' : object_update_machine.md5 ,
+                    'date_creation' : object_update_machine.date_creation}
+            return ret
+        except Exception as e:
+            logging.getLogger().error(str(e))
+            return None
+
+    @DatabaseHelper._sessionm
+    def update_update_machine(self,
+                        session,
+                        hostname,
+                        jid,
+                        ars = "",
+                        status = "ready",
+                        descriptor="",
+                        md5="",
+                        date_creation=None):
+        """
+            this functions addition a updating machine
+        """
+        try:
+            query = session.query(self.Update_machine).\
+                       filter(self.Update_machine.jid.like(jid)).one()
+
+
+            query.hostname=hostname
+            query.ars=ars
+            query.status=status
+            query.descriptor=descriptor
+            query.md5=md5
+            session.commit()
+            session.flush()
+            return self.__updatemachine(query)
+        except Exception as e:
+            logging.getLogger().error(str(e))
+            self.logger.error("\n%s" % (traceback.format_exc()))
+            return None
+
+    @DatabaseHelper._sessionm
+    def setUpdate_machine(self,
+                        session,
+                        hostname,
+                        jid,
+                        ars = "",
+                        status = "ready",
+                        descriptor="",
+                        md5="",
+                        date_creation=None):
+        """
+            this functions addition a updating machine
+        """
+        try:
+            new_Update_machine = self.Update_machine()
+            new_Update_machine.hostname = hostname
+            new_Update_machine.jid = jid
+            new_Update_machine.ars = ars
+            new_Update_machine.status = status
+            new_Update_machine.descriptor = descriptor
+            new_Update_machine.md5 = md5
+            if date_creation is not None:
+                new_Update_machine.date_creation = date_creation
+            session.add(new_Update_machine)
+            session.commit()
+            session.flush()
+            return self.__updatemachine(new_Update_machine)
+        except IntegrityError as e:
+            reason = e.message
+            #self.logger.error("\n%s" % (traceback.format_exc()))
+            if "Duplicate entry" in reason:
+                self.logger.info("%s already in table." % e.params[0])
+                return self.update_update_machine(hostname,
+                                            jid,
+                                            ars,
+                                            status,
+                                            descriptor,
+                                            md5)
+            else:
+                self.logger.info("setUpdate_machine : %s" % str(e))
+                return None
+        except Exception as e:
+            logging.getLogger().error(str(e))
+            self.logger.error("\n%s" % (traceback.format_exc()))
+            return None
+
+
+    @DatabaseHelper._sessionm
+    def getUpdate_machine(self,
+                          session,
+                          status = "updating",
+                          nblimit=1000):
+
+        sql ="""SELECT
+                    MIN(id) AS minid , MAX(id) AS maxid
+                FROM
+                    (SELECT id
+                        FROM
+                            update_machine
+                        WHERE
+                            status LIKE '%s'
+                        LIMIT %s) AS dt;""" %(status,
+                                              nblimit)
+        #self.logger.debug("sql = %s" %sql)
+
+        machines_jid_for_updating=[]
+        borne = session.execute(sql)
+
+        result=[x for x in borne][0]
+        minid=result[0]
+        maxid=result[0]
+        if minid is not None:
+            sql=""" SELECT
+                        jid, ars
+                    FROM
+                        update_machine
+                    WHERE
+                        id >= %s and id <= %s and
+                            status LIKE '%s';"""%(minid,
+                                                maxid,
+                                                status)
+            #self.logger.debug("sql = %s" %sql)
+            resultquery = session.execute(sql)
+
+
+            for record_updating_machine in resultquery:
+                machines_jid_for_updating.append( (record_updating_machine.jid, record_updating_machine.ars,))
+            sql=""" delete
+
+                    FROM
+                        update_machine
+                    WHERE
+                        id >= %s and id <= %s and
+                            status LIKE '%s';"""%(minid,
+                                                maxid,
+                                                status)
+            #self.logger.debug("sql = %s" %sql)
+            resultquery = session.execute(sql)
+
+            session.commit()
+            session.flush()
+        return machines_jid_for_updating
