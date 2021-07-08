@@ -727,9 +727,9 @@ class Mon_panels_template(Base, XmppMasterDBObj):
 
 #class Ban_machine(Base, XmppMasterDBObj):
     ## ====== Table name =========================
-    #__tablename__ = 'ban_machine'
+    #__tablename__ = 'ban_machines'
     ## ====== Fields =============================
-    ## Here we define columns for the table update_machine.
+    ## Here we define columns for the table ban_machines.
     ## Notice that each column is also a normal Python instance attribute.
     #jid = Column(String(255), nullable=False)
     #date  =  Column(DateTime, default=datetime.datetime.now)

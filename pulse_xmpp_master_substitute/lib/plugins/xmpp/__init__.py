@@ -197,7 +197,7 @@ class XmppMasterDatabase(DatabaseHelper):
             Base.prepare(self.engine_xmppmmaster_base, reflect=True)
             # add table auto_base
             self.Update_machine = Base.classes.update_machine
-            self.Ban_machine = Base.classes.ban_machine
+            self.Ban_machines = Base.classes.ban_machines
 
             self.is_activated = True
             self.logger.debug("Xmpp activation done.")
