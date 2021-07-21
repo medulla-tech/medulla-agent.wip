@@ -5041,6 +5041,10 @@ class XmppMasterDatabase(DatabaseHelper):
         return updatedb
 
     @DatabaseHelper._sessionm
+    def getPresenceuuidenabled(self, session, uuid, enabled = 0):
+        return session.query(exists().where (and_(Machines.uuid_inventorymachine == uuid,
+                                              Machines.enabled == enabled))).scalar()
+    @DatabaseHelper._sessionm
     def getPresenceuuid(self, session, uuid):
         machinespresente = session.query(Machines.uuid_inventorymachine).\
             filter(and_(Machines.uuid_inventorymachine == uuid,
@@ -5418,7 +5422,7 @@ class XmppMasterDatabase(DatabaseHelper):
             session.commit()
             session.flush()
         except Exception as e:
-            logging.getLogger().error("Function : is_machine_reconf_needed, we got the error: " % str(e))
+            logging.getLogger().error("Function : is_machine_reconf_needed, we got the error: %s " % str(e))
             logging.getLogger().error("We encountered the backtrace: \n%s" % traceback.format_exc())
 
 
