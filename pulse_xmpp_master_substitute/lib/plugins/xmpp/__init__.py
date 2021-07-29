@@ -1992,6 +1992,26 @@ class XmppMasterDatabase(DatabaseHelper):
         except Exception, e:
             return -1
 
+    @DatabaseHelper._sessionm
+    def wolbroadcastadressmacadress(self, session, listmacadress):
+        """
+            analyse l'ensemble des adresse mac a reveiller.
+            return ces adressmac grouper par leur adresse de broacast
+        """
+        grp_wol_broadcast_adress={}
+        result = session.query(Network.broadcast,
+                               Network.mac).distinct(Network.mac).\
+                filter(
+                    and_(Network.broadcast != "",
+                         Network.broadcast.isnot(None),
+                         Network.mac.in_(listmacadress))
+                       ).all()
+        for t in result:
+            if t.broadcast not in grp_wol_broadcast_adress:
+                grp_wol_broadcast_adress[t.broadcast]=[]
+            grp_wol_broadcast_adress[t.broadcast].append(t.mac)
+        return grp_wol_broadcast_adress
+
     def convertTimestampToSQLDateTime(self, value):
         return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value))
 

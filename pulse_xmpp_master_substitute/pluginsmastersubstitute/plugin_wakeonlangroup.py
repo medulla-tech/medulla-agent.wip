@@ -51,35 +51,49 @@ def action(xmppobject, action, sessionid, data, message, ret):
         logger.error("plugin %s\n%s" % (plugin['NAME'], traceback.format_exc()))
 
     try:
-        if xmppobject.wakeonlangroupremotelan :
-            senddataplugin = {'action': 'wakeonlangroup',
-                              'sessionid': sessionid,
-                              'data': {'macaddress': ""}}
-            serverrelaylist = XmppMasterDatabase().random_list_ars_relay_one_only_in_cluster()
-            if 'macadress' in data:
-                senddataplugin['data']['macaddress'] = data['macadress']
-                for serverrelay in serverrelaylist:
-                    xmppobject.send_message(mto=serverrelay['jid'],
-                                            mbody=json.dumps(senddataplugin,
-                                                             encoding='latin1'),
-                                            mtype='chat')
-                    msglog = "A WOL request has been sent from the ARS %s " \
-                             "to the mac address (10 first adress) %s" % (serverrelay['jid'],
+        if 'macadress' in data:
+            if xmppobject.wakeonlangroupremotelan :
+                if not xmppobject.wakeonlangroupwanbroadcast:
+                    senddataplugin = {'action': 'wakeonlangroup',
+                                    'sessionid': sessionid,
+                                    'data': {'macaddress': ""}}
+                    serverrelaylist = XmppMasterDatabase().random_list_ars_relay_one_only_in_cluster()
+                    senddataplugin['data']['macaddress'] = data['macadress']
+                    for serverrelay in serverrelaylist:
+                        xmppobject.send_message(mto=serverrelay['jid'],
+                                                mbody=json.dumps(senddataplugin,
+                                                                encoding='latin1'),
+                                                mtype='chat')
+                        msglog = "A WOL request has been sent from the ARS %s " \
+                            "to the mac address (10 first adress) %s" % (serverrelay['jid'],
                                                         data['macadress'][:10])
-                    historymessage(xmppobject, sessionid, msglog)
-                    logger.debug(msglog)
+                        historymessage(xmppobject, sessionid, msglog)
+                        logger.debug(msglog)
+                else:
+                    # send magic to brodcastcreseau
+                    datamac = XmppMasterDatabase().wolbroadcastadressmacadress(data['macadress'])
+                    for t in datamac:
+                        strdede =",".join(datamac[t])
+                        wol.send_magic_packet(*datamac[t],
+                                            ip_address=t,
+                                            port=xmppobject.wakeonlangroupport)
+                        msglog = "A WOL request has been sent on broacast subnet %s " \
+                                    "to the mac address %s" % ( t,
+                                                                datamac[t])
+                        historymessage(xmppobject, sessionid, msglog)
+                        logger.debug(msglog)
             else:
-                raise
-        else:
-            if 'macadress' in data:
                 wol.send_magic_packet(*data['macadress'],
-                                      port=xmppobject.wakeonlangroupport)
+                                    port=xmppobject.wakeonlangroupport)
                 msglog = "A local lan WOL request have been sent to the" \
-                         " mac address %s and port %s" % (data['macadress'],
-                                                          xmppobject.wakeonlangroupport)
+                        " mac address %s and port %s" % (data['macadress'],
+                                                        xmppobject.wakeonlangroupport)
                 historymessage(xmppobject, sessionid, msglog)
                 logger.debug(msglog)
-
+        else:
+            msglog = "macadress key missing for plugin wakeonlangroup"
+            historymessage(xmppobject, sessionid, msglog)
+            logger.debug(msglog)
     except Exception as error_exception:
         msglog = "An error occurent when loading the plugin plugin_wakeonlangroup %s" % data
         tracebackerror= "\n%s" % (traceback.format_exc())
@@ -120,6 +134,9 @@ def read_conf_wol(xmppobject):
     logger.debug("The configuration file is %s" % pathfileconf)
     xmppobject.wakeonlangroupremotelan = True
     xmppobject.wakeonlangroupport = 9
+
+    xmppobject.wakeonlangroupwanbroadcast = True
+
     if not os.path.isfile(pathfileconf):
         logger.error("The configuration file for the plugin %s is missing.\n" \
                      "It should be located to %s)" % (plugin['NAME'], pathfileconf))
@@ -131,6 +148,9 @@ def read_conf_wol(xmppobject):
 
         if Config.has_option("parameters", "remotelan"):
             xmppobject.wakeonlangroupremotelan = Config.getboolean('parameters', 'remotelan')
+
+        if Config.has_option("parameters", "wanbroadcast"):
+            xmppobject.wakeonlangroupwanbroadcast = Config.getboolean('parameters', 'wanbroadcast')
 
         if not xmppobject.wakeonlangroupremotelan:
             if Config.has_option("parameters", "wakeonlanport"):
