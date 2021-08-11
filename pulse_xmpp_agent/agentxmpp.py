@@ -404,6 +404,14 @@ class MUCBot(sleekxmpp.ClientXMPP):
             # As long as the Relayserver Agent isn't started, the sesion queues
             # where the deploy has failed are not useful
             self.session.clearallfilesession()
+
+        if self.config.agenttype in ['machine']:
+            # on gere WATCH_DOG
+            self.schedule('stabilized_start',
+                          120,
+                          self.stabilized_start,
+                          repeat=True)
+
         self.reversessh = None
         self.reversesshmanage = {}
         self.signalinfo = {}
@@ -600,6 +608,20 @@ class MUCBot(sleekxmpp.ClientXMPP):
                         15,
                         self.initialise_syncthing,
                         repeat=False)
+
+    def stabilized_start(self):
+        # creation fichier
+
+        directory_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                  "INFOSTMP")
+        BOOL_FILE_CONTROL_WATCH_DOG = os.path.join(directory_file,
+                                                   "BOOL_FILE_CONTROL_WATCH_DOG")
+
+        #if not os.path.isfile(BOOL_FILE_CONTROL_WATCH_DOG):
+        file_put_contents(BOOL_FILE_CONTROL_WATCH_DOG,
+                              "process %s :(%s)"%(os.getpid(), str(datetime.now())) )
+
+        logger.debug("creation BOOL_FILE_CONTROL_WATCH_DOG in %s"%BOOL_FILE_CONTROL_WATCH_DOG)
 
     def QDeployfile(self):
         sessioniddata = getRandomName(6, "Qdeployfile")

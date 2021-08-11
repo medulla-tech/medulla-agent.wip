@@ -1087,7 +1087,7 @@ def getIpXmppInterface(ipadress1, Port):
     ipadress = ipfromdns(ipadress1)
     if sys.platform.startswith('linux'):
         logging.log(DEBUGPULSE, "Searching for the XMPP Server IP Adress")
-        print "netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" % (Port, ipadress)
+        #print "netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" % (Port, ipadress)
         obj = simplecommand(
             "netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" %
             (Port, ipadress))
@@ -2679,7 +2679,7 @@ def add_key_to_authorizedkeys_on_client(username='pulseuser', key=''):
             return False, logs
         return True, msg
     # Function didn't return earlier, meaning the key is not present
-    msg = 'Error add key to authorizedkeys: id_rsa missing' 
+    msg = 'Error add key to authorizedkeys: id_rsa missing'
     return False, msg
 
 def reversessh_useraccount_mustexist_on_relay(username='reversessh'):
