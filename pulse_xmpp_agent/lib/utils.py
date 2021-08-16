@@ -1079,15 +1079,12 @@ def pulgindeploy1(func):
         return response
     return wrapper
 
-# determine address ip utiliser pour xmpp
-
-
 def getIpXmppInterface(ipadress1, Port):
     resultip = ''
     ipadress = ipfromdns(ipadress1)
     if sys.platform.startswith('linux'):
-        logging.log(DEBUGPULSE, "Searching for the XMPP Server IP Adress")
-        #print "netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" % (Port, ipadress)
+        logger.info("Searching for the XMPP Server IP Adress")
+        logger.info("netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" % (Port, ipadress))
         obj = simplecommand(
             "netstat -an |grep %s |grep %s| grep ESTABLISHED | grep -v tcp6" %
             (Port, ipadress))

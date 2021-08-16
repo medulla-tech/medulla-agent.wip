@@ -42,6 +42,9 @@ import psutil
 import signal
 from subprocess import Popen
 
+if sys.platform.startswith('win'):
+    import win32con
+    import win32api
 
 if sys.version_info[0] == 3:
     from configparser import ConfigParser
@@ -67,22 +70,37 @@ class global_data_process:
         self.ProcessObj  = None
         self.cmd = ""
         self.pid_schilds=[]
+        self.terminate_process=False
 
     def load_child_process(self):
-        if self.ProcessObj is not None:
-            if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-                cmd = "ps -ef | grep %s | grep -v grep | awk '{print $2}'" % self.PIDagent
-                logger.debug("cmd %s" % cmd)
-                ret = simplecommand(cmd)
-                listpid = [x.strip() for x in ret['result'] if x != str(self.PIDagent)]
-                self.pid_schilds.extend(listpid)
-                self.pid_schilds = list(set(self.pid_schilds))
-                logger.debug("list schild process %s" % self.pid_schilds)
-                try:
-                    self.pid_schilds.remove(str(self.PIDagent))
-                except ValueError:
-                    pass
-                logger.debug("new list schilde process %s" % self.pid_schilds)
+        """
+            get list child process
+        """
+        listpid=[]
+        if self.ProcessObj is not None and self.PIDagent != 0:
+            parent = psutil.Process(self.PIDagent)
+            children = parent.children(recursive=True)
+            for child in children:
+                listpid.append(child.pid)
+            self.pid_schilds.extend(listpid)
+            self.pid_schilds = list(set(self.pid_schilds))
+        #delete child process defunct
+        list_defunct=[]
+        for pid_child in self.pid_schilds:
+            if not psutil.pid_exists(pid_child):
+                list_defunct.append(pid_child)
+        for pid_defunct in list_defunct:
+            try:
+                self.pid_schilds.remove(pid_defunct)
+            except ValueError:
+                pass
+
+    def list_child_exist(self):
+        """test si 1 child exist """
+        for pid_child in self.pid_schilds:
+            if psutil.pid_exists(pid_child):
+                return True
+            return False
 
     def is_alive(self):
         """
@@ -102,87 +120,46 @@ class global_data_process:
                 self.ProcessObj.wait()
                 self.PIDagent = 0
                 self.ProcessObj = None
+                self.pid_schilds=[]
         return False
 
-    def stop_process_agent(self):
-        if self.ProcessObj is not None:
-            if self.PIDagent != 0:
-                if sys.platform.startswith('linux') or\
-                    sys.platform.startswith('darwin'):
-                    logger.debug("stop process linux % s" % self.PIDagent)
-                    cmd="ps -ef | grep %s | grep -v grep | awk '{print $2}'"\
-                        " | xargs -r kill -9 " % self.PIDagent
-                    logger.debug("applique cmd %s" % cmd)
-                    ret = simplecommand(cmd)
-                    # kill subprocess
-                    for delete_pid in self.pid_schilds:
-                        cmd="kill -9 %s" % delete_pid
-                        logger.debug("del sub process % s" % delete_pid)
-                        ret = simplecommand(cmd)
-                    self.pid_schilds=[]
-                elif sys.platform.startswith('win'):
-                    parent = psutil.Process(self.PIDagent)
-                    children = parent.children(recursive=True)
-                    for child in children:
-                        child.kill()
-                    gone, still_alive = psutil.wait_procs(children, timeout=5)
-                    if including_parent:
-                        parent.kill()
-                        parent.wait(5)
     def stop_process_agent(self, pere=True):
         """
             stop les process pere et fils multi os
         """
-        logger.debug("call kill_proc_tree")
         if self.ProcessObj is not None:
             if self.PIDagent != 0:
                 parent = psutil.Process(self.PIDagent)
                 children = parent.children(recursive=True)
                 for child in children:
+                    logger.debug("kill schild process %s" % (child.pid) )
                     child.kill()
                 gone, still_alive = psutil.wait_procs(children, timeout=5)
                 if pere:
-                    parent.kill()
-                    parent.wait(5)
-
-    #def kill_proc_tree(self):
-        #if self.ProcessObj is not None:
-            #if self.PIDagent != 0:
-                #if sys.platform.startswith('linux') or\
-                    #sys.platform.startswith('darwin'):
-                    #logger.debug("stop process linux % s" % self.PIDagent)
-                    #cmd="ps -ef | grep %s | grep -v grep | awk '{print $2}'"\
-                        #" | xargs -r kill -9 " % self.PIDagent
-                    #logger.debug("applique cmd %s" % cmd)
-                    #ret = simplecommand(cmd)
-                    ## kill subprocess
-                    #for delete_pid in self.pid_schilds:
-                        #cmd="kill -9 %s" % delete_pid
-                        #logger.debug("del sub process % s" % delete_pid)
-                        #ret = simplecommand(cmd)
-                    #self.pid_schilds=[]
-                #elif sys.platform.startswith('win'):
-                    #parent = psutil.Process(self.PIDagent)
-                    #children = parent.children(recursive=True)
-                    #for child in children:
-                        #child.kill()
-                    #gone, still_alive = psutil.wait_procs(children, timeout=5)
-                    #if including_parent:
-                        #parent.kill()
-                        #parent.wait(5)
+                    try:
+                        logger.debug("kill parent process %s" % (parent.pid) )
+                        parent.kill()
+                        parent.wait(5)
+                    except:
+                        pass
+                    self.PIDagent=0
+                    self.ProcessObj = None
+                    self.pid_schilds=[]
+        self.display_Process()
 
     def start_process_agent(self, prog):
         if self.ProcessObj is None:
             self.cmd = prog
-            self.ProcessObj = subprocess.Popen(self.cmd,
-                                            stdout=None,
-                                            stderr=None,
-                                            stdin=None,
-                                            close_fds=True,
-                                            preexec_fn=os.setpgrp)
+            self.ProcessObj = subprocess.Popen( self.cmd,
+                                                stdout=None,
+                                                stderr=None,
+                                                stdin=None,
+                                                close_fds=True,
+                                                preexec_fn=os.setpgrp)
             self.PIDagent = self.ProcessObj.pid
             time.sleep(1)
             self.load_child_process()
+            self.display_Process()
 
     def display_Process(self):
         try:
@@ -197,6 +174,41 @@ class global_data_process:
                 logger.debug("process no launcher yet")
         except:
             pass
+
+    def _CtrlHandler(self, evt):
+        """## todo intercep message in console program
+        win32con.WM_QUERYENDSESSION win32con.WM_POWERBROADCAS(PBT_APMSUSPEND
+        """
+        if sys.platform.startswith('win'):
+            if evt == win32con.CTRL_SHUTDOWN_EVENT:
+                logger.debug("SIGNAL EVENT CTRL_SHUTDOWN_EVENT")
+                self.terminate_process=True
+                self.stop_process_agent()
+                return True
+            elif evt == win32con.CTRL_LOGOFF_EVENT:
+                logger.debug("SIGNAL EVENT CTRL_LOGOFF EVENT")
+                return True
+            elif evt == win32con.CTRL_BREAK_EVENT:
+                logger.debug("SIGNAL EVENT CTRL_BREAK_EVENT")
+                return True
+            elif evt == win32con.CTRL_CLOSE_EVENT:
+                logger.debug("SIGNAL EVENT CTRL_CLOSE_EVENT")
+                return True
+            elif evt == win32con.CTRL_C_EVENT:
+                logger.debug("SIGNAL EVENT CTRL_C_EVENT")
+                self.terminate_process=True
+                self.stop_process_agent()
+                return True
+            logger.debug("SIGNAL EVENT INCONUE")
+        else:
+            pass
+        return False
+
+    def signal_handler(self, signal_in, frame):
+        if signal_in in [signal.SIGINT, signal.SIGQUIT,signal.SIGQUIT]:
+            logger.debug("SIGNAL EVENT %s"%signal_in)
+            self.terminate_process=True
+            self.stop_process_agent()
 
 class base_folder:
     def __init__(self):
@@ -910,7 +922,6 @@ def testagentconf(typeconf):
         return True
     return False
 
-
 def start_agent(pathagent, agent="connection", console=False, typeagent="machine"):
     pythonexec = psutil.Process().exe()
     agentfunction   = os.path.join(pathagent, "connectionagent.py")
@@ -953,9 +964,21 @@ def start_agent(pathagent, agent="connection", console=False, typeagent="machine
                                         "-t",
                                         typeagent])
 
+
+
 if __name__ == '__main__':
     #pathagent = os.path.join(os.path.dirname(os.path.realpath(__file__)))
     ProcessData = global_data_process()
+    if sys.platform.startswith('win'):
+        result = win32api.SetConsoleCtrlHandler(ProcessData._CtrlHandler, 1)
+        if result == 0:
+            logging.log(DEBUGPULSE,'Could not SetConsoleCtrlHandler (error %r)' %
+                            win32api.GetLastError())
+        else:
+            logging.log(DEBUGPULSE,'Set handler for console events.')
+    elif sys.platform.startswith('linux') :
+        signal.signal(signal.SIGINT, ProcessData.signal_handler)
+        signal.signal(signal.SIGQUIT, ProcessData.signal_handler)
 
     if platform.system()=='Windows':
         # Windows does not support ANSI escapes and we are using API calls to set the console color
@@ -1072,16 +1095,30 @@ if __name__ == '__main__':
     connectionagent = os.path.join(pathagent, "connectionagent.py")
     agentxmpp = os.path.join(pathagent, "agentxmpp.py")
 
-    pythonexec = "C:\\python27\\python.exe"
-    pythonexec1 = psutil.Process().exe()
 
-    dede=0
+    pythonexec = psutil.Process().exe()
+
     os.chdir(pathagent)
+
+    if ProcessData.terminate_process:
+        logger.debug("Quit program")
+        sys.exit(0)
 
     if opts.typemachine.lower() in ["machine"]:
         if  testspeedagent:
-            start_agent(pathagent,agent="connection", console=opts.consoledebug)
+            start_agent(pathagent ,agent="connection", console=opts.consoledebug)
+
+
+    if ProcessData.terminate_process:
+        logger.debug("Quit program")
+        sys.exit(0)
+
     start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
+
+
+    if ProcessData.terminate_process:
+        logger.debug("Quit program")
+        sys.exit(0)
     test= 1
     logger.debug('start loop loop test')
     # possible genere descripteur agent file
@@ -1101,9 +1138,13 @@ if __name__ == '__main__':
     logger.debug('launcher listen mode')
     logger.debug('moditoring and watch dog')
     while 1:
+        if ProcessData.terminate_process:
+            logger.debug("Quit program on event")
+            break
         ProcessData.is_alive() # verify process exist
+        ProcessData.load_child_process()
         try:
-            logger.debug('\n\n################ LOOP LAUNCHER CYCLE %s#################\n\n'%countcycle)
+            logger.debug('################ LOOP LAUNCHER CYCLE %s#################'%countcycle)
             if (countcycle % 6) == 0: #toutes les 60 secondes
                 if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
                     # action a faire tout le n secondes sur linux serveur
@@ -1112,16 +1153,9 @@ if __name__ == '__main__':
                     logger.debug("%s" % ret['result'])
                     ret = simplecommandstr("mpstat -P ALL",  emptyline=False)
                     logger.debug("%s" % ret['result'])
-
-            if (countcycle == 4):
-                # initailisation
-                ProcessData.load_child_process() # on update list des fils de l'agent.
-
             if (countcycle % 18) == 0: # toutes les 180 secondes
                 logger.debug("traitement watch dog AT : %s"%str(datetime.now()))
                 ProcessData.display_Process()
-                if (countcycle == 18):
-                    ProcessData.load_child_process() # on update list des fils de l'agents.
                 if os.path.isfile(BOOL_FILE_CONTROL_WATCH_DOG):
                     # pas de soucis detecter
                     # on efface le fichier du chien de garde
