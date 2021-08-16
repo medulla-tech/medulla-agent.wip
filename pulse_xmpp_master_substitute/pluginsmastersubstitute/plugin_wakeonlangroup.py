@@ -54,8 +54,8 @@ def action(xmppobject, action, sessionid, data, message, ret):
         if 'macadress' in data:
             if xmppobject.wakeonlangroupremotelan :
                 senddataplugin = {'action': 'wakeonlangroup',
-                                    'sessionid': sessionid,
-                                    'data': {'macaddress': ""}}
+                                  'sessionid': sessionid,
+                                  'data': {'macaddress': ""}}
                 serverrelaylist = XmppMasterDatabase().random_list_ars_relay_one_only_in_cluster()
                 senddataplugin['data']['macaddress'] = data['macadress']
                 for serverrelay in serverrelaylist:
@@ -70,7 +70,7 @@ def action(xmppobject, action, sessionid, data, message, ret):
                     logger.debug(msglog)
             else:
                 if xmppobject.wakeonlantargetsubnet:
-                    # send magic to brodcastcreseau
+                    # send magic to broadcast network
                     datamac = XmppMasterDatabase().wolbroadcastadressmacadress(data['macadress'])
                     for t in datamac:
                         strdede =",".join(datamac[t])
@@ -94,6 +94,7 @@ def action(xmppobject, action, sessionid, data, message, ret):
             msglog = "macadress key missing for plugin wakeonlangroup"
             historymessage(xmppobject, sessionid, msglog)
             logger.debug(msglog)
+
     except Exception as error_exception:
         msglog = "An error occurent when loading the plugin plugin_wakeonlangroup %s" % data
         tracebackerror= "\n%s" % (traceback.format_exc())

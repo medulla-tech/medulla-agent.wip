@@ -310,17 +310,17 @@ class MUCBot(sleekxmpp.ClientXMPP):
         self.agentsiveo = self.config.jidagentsiveo
 
         self.agentmaster = jid.JID("master@pulse")
-        self.sub_subscribeall=[]
+        self.sub_subscribe_all = []
         if not hasattr(self.config, 'sub_subscribe'):
             self.sub_subscribe = self.agentmaster
         else:
             if isinstance(self.config.sub_subscribe, list):
-                self.sub_subscribeall = [jid.JID(x) for x in self.config.sub_subscribe]
+                self.sub_subscribe_all = [jid.JID(x) for x in self.config.sub_subscribe]
             if isinstance(self.config.sub_subscribe, list) and\
                 len(self.config.sub_subscribe) > 0:
                 self.sub_subscribe = jid.JID(self.config.sub_subscribe[0])
             else:
-                self.sub_subscribeall = [jid.JID(self.config.sub_subscribe)]
+                self.sub_subscribe_all = [jid.JID(self.config.sub_subscribe)]
                 self.sub_subscribe = jid.JID(self.config.sub_subscribe)
 
         if not hasattr(self.config, 'sub_logger'):
@@ -1527,7 +1527,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
         except Exception:
             logger.error("\n%s"%(traceback.format_exc()))
 
-    def unsubscribe_substitut_subcribe(self):
+    def unsubscribe_substitute_subscribe(self):
         """
         This function is used to unsubscribe the substitute subscribe
         It sends a presence message with type "unsubscribe"
@@ -1541,16 +1541,17 @@ class MUCBot(sleekxmpp.ClientXMPP):
                     self.send_presence (pto=t, ptype='unsubscribe')
                     self.update_roster(t, subscription='remove')
         except Exception:
-            logger.error("\n%s"%(traceback.format_exc()))
+            logger.error("\n%s" % (traceback.format_exc()))
 
     def start(self, event):
         self.get_roster()
         self.send_presence()
-        logger.info("subscribe to %s agent"%self.sub_subscribe.user)
+        logger.info("subscribe to %s agent" % self.sub_subscribe.user)
         self.limit_message_presence_clean_substitute = []
         self.unsubscribe_agent()
-        self.unsubscribe_substitut_subcribe()
+        self.unsubscribe_substitute_subscribe()
         self.ipconnection = self.config.Server
+
         self.send_presence (pto=self.sub_subscribe, ptype='subscribe')
         if  self.config.agenttype in ['relayserver']:
             try:
@@ -2085,10 +2086,11 @@ class MUCBot(sleekxmpp.ClientXMPP):
             logging.info("Account created for %s!" % self.boundjid)
         except IqError as e:
             if e.iq['error']['code'] == "409":
-                logging.warning("Could not register account: User already exists")
+                logging.warning("Could not register account %s : User already exists" %\
+                        resp['register']['username'])
             else:
-                logging.error("Could not register account: %s" %\
-                        e.iq['error']['text'])
+                logging.error("Could not register account %s : %s" %\
+                        (resp['register']['username'], e.iq['error']['text']))
         except IqTimeout:
             logging.error("No response from server.")
             logger.error("\n%s"%(traceback.format_exc()))
@@ -2722,8 +2724,8 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
         server_conf = {
             # Root access
             'global':{
-                'server.socket_host': '0.0.0.0',
-                'server.socket_port': port,
+                'server.socket_host': config.fv_host,
+                'server.socket_port': config.fv_port,
             },
             '/': {
                 #'tools.staticdir.on': True,
@@ -2771,8 +2773,8 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
 
         cherrypy.server.unsubscribe()
         server1 = cherrypy._cpserver.Server()
-        server1.socket_port = port
-        server1._socket_host = '0.0.0.0'
+        server1.socket_port = config.fv_port
+        server1._socket_host = config.fv_host
 
         # ===
         # Do not remove the following lines
@@ -2989,11 +2991,11 @@ class process_xmpp_agent():
                         logging.log(40," ERROR analyse alternative connection")
                         logging.log(40," Check file %s"%conffilename(xmpp.config.agenttype))
                 else:
-                    logging.log(40,"file %s missing" % conffilename("cluster"))
+                    logging.log(40,"The file %s is missing" % conffilename("cluster"))
                     setgetcountcycle(1)
                     if setgetcountcycle(-1) > 3:
                         setgetcountcycle()
-                        logging.log(DEBUGPULSE,"run subprocess connectionagent on missing cluster.ini")
+                        logging.log(DEBUGPULSE,"We need to restart the configurator as the file cluster.ini is missing")
                         nameprogconnection = os.path.join(os.path.dirname(os.path.realpath(__file__)), "connectionagent.py")
                         args = ['python', nameprogconnection, '-t', 'machine']
                         subprocess.call(args)

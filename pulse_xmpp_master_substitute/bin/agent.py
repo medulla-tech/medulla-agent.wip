@@ -39,7 +39,6 @@ import traceback
 import signal
 from lib.plugins.xmpp import XmppMasterDatabase
 from lib.plugins.glpi import Glpi
-# gestion de plugin scheduler dans les substitutes
 from lib.manage_scheduler import manage_scheduler
 
 import random
@@ -76,8 +75,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
         logging.log(DEBUGPULSE,"Starting Master sub (%s)" %(self.config.jidmastersubstitute))
         sleekxmpp.ClientXMPP.__init__(self, jid.JID(self.config.jidmastersubstitute), self.config.passwordconnection)
 
-        logger.debug("### CREATION MANAGER PLUGINSCHULING ##########")
-        # on definie le type de l agent
+        # We define the type of the Agent
         self.config.agenttype = 'substitute'
         self.manage_scheduler = manage_scheduler(self)
         self.schedule('schedulerfunction',
@@ -246,7 +244,6 @@ class MUCBot(sleekxmpp.ClientXMPP):
             self.send_message(  mto = jid.JID(self.config.sub_logger),
                                 mbody=json.dumps(msgbody),
                                 mtype='chat')
-                                mtype='chat')
     def schedulerfunction(self):
         self.manage_scheduler.process_on_event()
 
@@ -261,10 +258,11 @@ class MUCBot(sleekxmpp.ClientXMPP):
             logging.info("Account created for %s!" % self.boundjid)
         except IqError as e:
             if e.iq['error']['code'] == "409":
-                logging.warning("Could not register account: User already exists")
+                logging.warning("Could not register account %s : User already exists" %\
+                        resp['register']['username'])
             else:
-                logging.error("Could not register account: %s" %\
-                        e.iq['error']['text'])
+                logging.error("Could not register account %s : %s" %\
+                        (resp['register']['username'], e.iq['error']['text']))
         except IqTimeout:
             logging.error("No response from server.")
             traceback.print_exc(file=sys.stdout)

@@ -4,9 +4,8 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-# file : descriptor_scheduler_machine/scheduling_autre.py
 """
-this plugin lit est appeler a interval regulier pour analyser si les package presente 1 modification..
+This plugin check regularly if packages have been modified
 """
 import json
 import logging
@@ -24,16 +23,12 @@ import traceback
 
 logger = logging.getLogger()
 
-#warning le descriptor plugin doit être sur la même line
-plugin = {"VERSION" : "1.0.005", "NAME" : "scheduling_ars_synchronization", "TYPE" : "all", "SCHEDULED" : True}
-
-# nb  -1 infinie
-# toutes les minutes
+# WARNING: The descriptor MUST be in one line
+plugin = {"VERSION": "1.0.005", "NAME": "scheduling_ars_synchronization", "TYPE": "all", "SCHEDULED": True}
 
 SCHEDULE = {"schedule" : "*/1 * * * *", "nb" : -1}
 
-substitute = "monsubstitute" #sera ontegre dans la configuration des substitute auromatique.
-
+substitute = "monsubstitute" # Will be integrated in the configuration of the substitutes
 JSON_NAMES = ["xmppdeploy", "conf"]
 
 def schedule_main(xmppobject):
@@ -43,15 +38,15 @@ def schedule_main(xmppobject):
     if xmppobject.config.agenttype in ['relayserver']:
         try:
             pkgsdata = pkgsbase(xmppobject)
-            
+
             if xmppobject.num_call_scheduling_ars_synchronization == 0:
                 __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata)
             lien_obj = lncreate(xmppobject.config.list_folder_sources,
                                 xmppobject.config.location_packages)
-            #uniquement pour les ars.
+            # Only for ARS
             try:
-                newfingerprints={}
-                dateedition={}
+                newfingerprints = {}
+                dateedition = {}
                 for source in xmppobject.config.list_folder_sources:
                     if xmppobject.config.debug_info_ars_synchro:
                         logger.info("Creation Finger print for packages in directory %s" % source)
@@ -60,42 +55,40 @@ def schedule_main(xmppobject):
                         logger.info("cmd for search size %s" % cmd)
                     resultcmd = simplecommand(cmd)
                     if resultcmd['code'] == 0:
-                        for t in resultcmd['result']:
-                            tab = [x.strip() for x in t.split(',')]
+                        for result in resultcmd['result']:
+                            tab = [x.strip() for x in result.split(',')]
                             if len(tab[0]) == 36:
-                                # on recherche la date du json de modifications.
+                                # We are searching for the JSON modification date
                                 fiche_path = os.path.join(source, tab[0], "xmppdeploy.json")
                                 md5 = finger_print_md5(fiche_path)
                                 tab.append(md5)
-                                newfingerprints[tab[0]]=",".join(tab)
-                                statResult = os.stat(fiche_path)
-                                dateedition[tab[0]]=[str(statResult.st_ctime), str(statResult.st_mtime),tab[1]]
+                                newfingerprints[tab[0]] = ",".join(tab)
+                                StatResult = os.stat(fiche_path)
+                                dateedition[tab[0]] = [str(StatResult.st_ctime), str(StatResult.st_mtime), tab[1]]
                 if xmppobject.config.debug_info_ars_synchro:
-                    logger.info("Creation NEW FINGERPRINT LIST : %s" % json.dumps (newfingerprints, indent=4))
+                    logger.info("Creation NEW FINGERPRINT LIST : %s" % json.dumps(newfingerprints, indent=4))
                 xmppobject.config.PACKAGES_ID = initialisation_packages_id(pkgsdata)
                 if xmppobject.config.debug_info_ars_synchro:
                     logger.info("PACKAGE ID IN BASE IS %s" % xmppobject.config.PACKAGES_ID)
 
-                keyclean=[]
+                keyclean = []
                 for newfingerprint in newfingerprints:
 
-
                     if newfingerprint in xmppobject.config.PACKAGES_ID:
-                        file_src = os.path.join(xmppobject.config.pakage_print_fingers_base,
-                                                    newfingerprint)
+                        file_src = os.path.join(xmppobject.config.pakage_print_fingers_base, newfingerprint)
                         if xmppobject.config.debug_info_ars_synchro:
                             logger.info("check synchro for PACKAGE ID %s IN BASE " % newfingerprint)
                         if not os.path.isfile(file_src):
                             if xmppobject.config.debug_info_ars_synchro:
                                 logger.info("** New Package is exit in partage %s" % newfingerprints[newfingerprint])
-                            # nouveau package
-                            # on reinitialise la liste de packages et on ecrit le fingerprint en base fichier
+                            # New package
+                            # We reinitialize the package list and we write the fingerprint the base.
                             if xmppobject.config.debug_info_ars_synchro:
-                                logger.info("create new file fingerprint in %s" % file_src )
+                                logger.info("create new file fingerprint in %s" % file_src)
                             file_put_contents(file_src, getRandomName(14, pref="fingerprint_fake_"))
                     else:
-                        # la liste des packages pris en compte sont les packages
-                        # appartenant seulement a la liste des packages de la table package.
+                        # The list of the package used are only the packages
+                        # from the packages of the package SQL table
                         keyclean.append(newfingerprint)
 
                 if xmppobject.config.debug_info_ars_synchro:
@@ -104,40 +97,35 @@ def schedule_main(xmppobject):
                     if xmppobject.config.debug_info_ars_synchro:
                         logger.info("** the packages existants in the sharing %s is ignored." % cleankeydirect)
                     del newfingerprints[cleankeydirect]
-                    # on supprime dans la base fichier source finger print
                     filesupp = os.path.join(xmppobject.config.pakage_print_fingers_base,
                                             cleankeydirect)
                     if os.path.isfile(filesupp):
                         os.remove(filesupp)
                 if xmppobject.config.debug_info_ars_synchro:
                     logger.info("*************TEST FINGERPRINT****************")
-                # on verifie si il y a des changements dans les figers print entre ceaux enregistres et ceux de notre list.
+                # on verifie si il y a des changements dans les figers print entre ceux enregistres et ceux de notre list.
                 # on en profite pour virer les fichier finger print orphelin
                 # on charge la liste de nos figerprint.
-                lfile = [ f for f in os.listdir(xmppobject.config.pakage_print_fingers_base) if len(f)==36 ]
+                lfile = [f for f in os.listdir(xmppobject.config.pakage_print_fingers_base) if len(f) == 36]
                 for filea in lfile:
                     filepath = os.path.join(xmppobject.config.pakage_print_fingers_base,
                                             filea)
                     if filea not in xmppobject.config.PACKAGES_ID:
-                        # renove file finger print
                         os.remove(filepath)
                     else:
-                        # on compare les figers print
-
                         if filea in newfingerprints:
-                            # on peut faire la comparaison des finger print.
+                            # We can compare the fingerprints
                             if xmppobject.config.debug_info_ars_synchro:
-                                logger.info("check change in package %s" % filea)
-                            figerpfichier = file_get_contents(filepath) # charge finger print de la base
+                                logger.info("We are checking for changes in the package %s" % filea)
+                            figerpfichier = file_get_contents(filepath)
                             if newfingerprints[filea] != figerpfichier:
                                 if xmppobject.config.debug_info_ars_synchro:
-                                    logger.info("chang in package %s find " % filea)
-                                # on sauve le finger print.
-                                file_put_contents(filepath, newfingerprints[filea] )
-                                # il y a eu 1 changement dans les finger print.
-                                # on met a jour dans la base
+                                    logger.info("We found changes in the package %s" % filea)
+                                file_put_contents(filepath, newfingerprints[filea])
+                                # The fingerprint has changed
+                                # We update it on the base.
                                 newfingerprint = newfingerprints[filea]
-                                dateeditionbase = dateedition[filea][1] # date de dernier modification
+                                dateeditionbase = dateedition[filea][1] # Date of the last modification
                                 if dateedition[filea][0] == dateedition[filea][1]:
                                     status = "creation"
                                 else:
@@ -156,8 +144,8 @@ def schedule_main(xmppobject):
 
                             else:
                                 if xmppobject.config.debug_info_ars_synchro:
-                                    logger.info("no changing in package %s" % filea)
-                lien_obj.creation_link_symbolique_directory()
+                                    logger.info("We found no changes in the package %s" % filea)
+                lien_obj.create_symlink()
             except Exception as e:
                 logger.error(" %s : %s" % (plugin['NAME'], str(e)))
                 logger.error("\n%s"%(traceback.format_exc()))
@@ -168,14 +156,14 @@ def schedule_main(xmppobject):
 
 def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
     """
-        lit la configuration du plugin
-        le repertoire ou doit se trouver le fichier de configuration est dans la variable xmppobject.config.pathdirconffile
+        Read the plugin configuration
+        The xmppobject.config.pathdirconffile contains the location of the configuration folder.
     """
 
     namefichierconf = plugin['NAME'] + ".ini"
     # path cf function directoryconffile() for oss and type agent
 
-    xmppobject.pathfileconfscheduling_ars_synchronization = os.path.join( xmppobject.config.nameplugindir, namefichierconf )
+    xmppobject.pathfileconfscheduling_ars_synchronization = os.path.join(xmppobject.config.nameplugindir, namefichierconf)
     logger.info("Read Configuration in File %s" % xmppobject.pathfileconfscheduling_ars_synchronization)
 
     # application des valeurs par default
@@ -183,47 +171,32 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
                                         "..",
                                         "INFOSTMP"))
 
-    path_packageagent = os.path.join( fgpp, "package_agent")
+    path_packageagent = os.path.join(fgpp, "package_agent")
 
     if not os.path.exists(path_packageagent):
         os.mkdir(path_packageagent)
         os.chmod(path_packageagent, 0o777)
 
     # creation base fingerprint
-    pakage_print_fingers_base = os.path.join( path_packageagent, "base")
-    #pakage_print_fingers_dest = os.path.join( path_packageagent, "dest")
-    #pakage_print_fingers_output_tmp = os.path.join( path_packageagent, "output_tmp")
+    pakage_print_fingers_base = os.path.join(path_packageagent, "base")
 
     if not os.path.exists(pakage_print_fingers_base):
         os.mkdir(pakage_print_fingers_base)
         os.chmod(pakage_print_fingers_base, 0o777)
 
-    #if not os.path.exists(pakage_print_fingers_dest):
-        #os.mkdir(pakage_print_fingers_dest)
-        #os.chmod(pakage_print_fingers_dest, 0o777)
-
-    #if not os.path.exists(pakage_print_fingers_output_tmp):
-        #os.mkdir(pakage_print_fingers_output_tmp)
-        #os.chmod(pakage_print_fingers_output_tmp, 0o777)
-
     xmppobject.config.pakage_print_fingers_base = pakage_print_fingers_base
-    #xmppobject.config.pakage_print_fingers_dest = pakage_print_fingers_dest
-    #xmppobject.config.pakage_print_fingers_output_tmp = pakage_print_fingers_output_tmp
 
     logger.info("%s" % xmppobject.config.pakage_print_fingers_base)
-    #logger.info("%s" % xmppobject.config.pakage_print_fingers_dest)
-    #logger.info("%s" % xmppobject.config.pakage_print_fingers_output_tmp)
-    #xmppobject.config.exclude = [".stfolder"]
     xmppobject.config.list_folder_sources = ['/var/lib/pulse2/packagesglobal',
-                                                '/var/lib/pulse2/packageslocal']
+                                             '/var/lib/pulse2/packageslocal']
     xmppobject.config.location_packages = '/var/lib/pulse2/packages'
     xmppobject.config.modulo = 20
 
-    # pas encore implemente
-    #xmppobject.config.xmppmaster_dbhost = "localhost"
-    #xmppobject.config.xmpp_master_dbuser = "xmppmaster"
-    #xmppobject.config.xmpp_master_dbpasswd = "xmppmaster"
-    #xmppobject.config.xmpp_master_dbname = "xmppmaster"
+    # FIXME: Implement me
+    # xmppobject.config.xmppmaster_dbhost = "localhost"
+    # xmppobject.config.xmpp_master_dbuser = "xmppmaster"
+    # xmppobject.config.xmpp_master_dbpasswd = "xmppmaster"
+    # xmppobject.config.xmpp_master_dbname = "xmppmaster"
 
     #default parameter
     xmppobject.config.pkgs_dbhost = "localhost"
@@ -254,66 +227,66 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
             if Config.has_option("global",
                                  "location_folder_packages"):
                 xmppobject.config.location_packages = Config.get('global',
-                                                                'location_folder_packages')
+                                                                 'location_folder_packages')
             if Config.has_option("global",
                                  "list_folder_sources"):
                 list_folder_sources = Config.get('global',
                                                  'list_folder_sources')
-                xmppobject.config.list_folder_sources =  [str(x.strip()) \
+                xmppobject.config.list_folder_sources = [str(x.strip()) \
                                                 for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*', list_folder_sources) \
-                                                    if x.strip() != "" ]    
+                                                    if x.strip() != ""]
+        # FIXME: Implement me
+        # if Config.has_section("figersprint"):
+            # if Config.has_option("figersprint",
+                                 # "exclude"):
+                # exclude = Config.get('figersprint',
+                                      # 'exclude')
+                # xmppobject.config.exclude =  [str(x.strip()) \
+                                                # for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*', exclude) \
+                                                    # if x.strip() != "" ]
 
-        #if Config.has_section("figersprint"):
-            #if Config.has_option("figersprint",
-                                 #"exclude"):
-                #exclude = Config.get('figersprint',
-                                      #'exclude')
-                #xmppobject.config.exclude =  [str(x.strip()) \
-                                                #for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*', exclude) \
-                                                    #if x.strip() != "" ]
-
-            #if Config.has_option("figersprint",
-                                 #"modulo"):
-                #xmppobject.config.modulo = Config.getint('figersprint',
-                                                         #'modulo')
-        #if Config.has_section("xmpp_master_db"):
-            #if Config.has_option("xmpp_master_db",
-                                 #"xmppmaster_dbhost"):
-                #xmppobject.config.xmppmaster_dbhost = Config.get('xmpp_master_db',
-                                                                    #'xmppmaster_dbhost')
-            #if Config.has_option("xmpp_master_db",
-                                 #"xmpp_master_dbuser"):
-                #xmppobject.config.xmpp_master_dbuser = Config.get('xmpp_master_db',
-                                                                     #'xmpp_master_dbuser')
-            #if Config.has_option("xmpp_master_db",
-                                 #"xmpp_master_dbpasswd"):
-                #xmppobject.config.xmpp_master_dbpasswd = Config.get('xmpp_master_db',
-                                                                       #'xmpp_master_dbpasswd')
-            #if Config.has_option("xmpp_master_db",
-                                 #"xmpp_master_dbname"):
-                #xmppobject.config.xmpp_master_dbname = Config.get('xmpp_master_db',
-                                                                    #'xmpp_master_dbname')
-            #if Config.has_option("xmpp_master_db",
-                                 #"xmpp_master_dbport"):
-                #xmppobject.config.xmpp_master_dbport = Config.getint('xmpp_master_db',
-                                                                    #'xmpp_master_dbport')
+            # if Config.has_option("figersprint",
+                                 # "modulo"):
+                # xmppobject.config.modulo = Config.getint('figersprint',
+                                                         # 'modulo')
+        # if Config.has_section("xmpp_master_db"):
+            # if Config.has_option("xmpp_master_db",
+                                 # "xmppmaster_dbhost"):
+                # xmppobject.config.xmppmaster_dbhost = Config.get('xmpp_master_db',
+                                                                    # 'xmppmaster_dbhost')
+            # if Config.has_option("xmpp_master_db",
+                                 # "xmpp_master_dbuser"):
+                # xmppobject.config.xmpp_master_dbuser = Config.get('xmpp_master_db',
+                                                                     # 'xmpp_master_dbuser')
+            # if Config.has_option("xmpp_master_db",
+                                 # "xmpp_master_dbpasswd"):
+                # xmppobject.config.xmpp_master_dbpasswd = Config.get('xmpp_master_db',
+                                                                       # 'xmpp_master_dbpasswd')
+            # if Config.has_option("xmpp_master_db",
+                                 # "xmpp_master_dbname"):
+                # xmppobject.config.xmpp_master_dbname = Config.get('xmpp_master_db',
+                                                                    # 'xmpp_master_dbname')
+            # if Config.has_option("xmpp_master_db",
+                                 # "xmpp_master_dbport"):
+                # xmppobject.config.xmpp_master_dbport = Config.getint('xmpp_master_db',
+                                                                    # 'xmpp_master_dbport')
         if Config.has_section("pkgsdatabase"):
             if Config.has_option("pkgsdatabase",
                                  "pkgs_dbhost"):
                 xmppobject.config.pkgs_dbhost = Config.get('pkgsdatabase',
-                                                              'pkgs_dbhost')
+                                                           'pkgs_dbhost')
             if Config.has_option("pkgsdatabase",
                                  "pkgs_dbuser"):
                 xmppobject.config.pkgs_dbuser = Config.get('pkgsdatabase',
-                                                              'pkgs_dbuser')
+                                                           'pkgs_dbuser')
             if Config.has_option("pkgsdatabase",
                                  "pkgs_dbpasswd"):
                 xmppobject.config.pkgs_dbpasswd = Config.get('pkgsdatabase',
-                                                                'pkgs_dbpasswd')
+                                                             'pkgs_dbpasswd')
             if Config.has_option("pkgsdatabase",
                                  "pkgs_dbname"):
                 xmppobject.config.pkgs_dbname = Config.get('pkgsdatabase',
-                                                              'pkgs_dbname')
+                                                           'pkgs_dbname')
             if Config.has_option("pkgsdatabase",
                                  "pkgs_dbport"):
                 xmppobject.config.pkgs_dbport = Config.getint('pkgsdatabase',
@@ -321,11 +294,11 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
             if Config.has_option("pkgsdatabase",
                                  "pkgs_connect_timeout"):
                 xmppobject.config.pkgs_connect_timeout = Config.getint('pkgsdatabase',
-                                                              'pkgs_connect_timeout')
+                                                                       'pkgs_connect_timeout')
 
 
-    #on recupere les id des packages
-    sql="""SELECT
+    # on recupere les id des packages
+    sql = """SELECT
             id
          FROM
             pkgs.pkgs_shares_ars
@@ -337,7 +310,6 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
         if result is not None:
             xmppobject.config.ARS_ID = int(result[0][0])
             logger.info("Ars id of %s is %s" % (xmppobject.boundjid.user, xmppobject.config.ARS_ID))
-        #xmppobject.config.PACKAGES_ID = initialisation_packages_id(pkgsdata)
     return False
 
 def finger_print_md5(file):
@@ -350,7 +322,7 @@ def finger_print_md5(file):
 
 def initialisation_packages_id(pkgsdata):
     result = pkgsdata.fetching("""SELECT uuid, id FROM pkgs.packages;""")
-    ret={}
+    ret = {}
     if result is not None:
         for t in result:
             ret[t[0]] = int(t[1])
@@ -364,7 +336,7 @@ def create_or_update_pkgs_shares_ars_web(xmppobject,
                                          status,
                                          dateeditionbase,
                                          fingerprint):
-    sql= """SELECT
+    sql = """SELECT
                 id
             FROM
                 pkgs_shares_ars_web
@@ -374,7 +346,7 @@ def create_or_update_pkgs_shares_ars_web(xmppobject,
         logger.info("search if package exist \n : %s" % sql)
     result = pkgsdata.fetching(sql)
     if result:
-        sql= """UPDATE `pkgs`.`pkgs_shares_ars_web`
+        sql = """UPDATE `pkgs`.`pkgs_shares_ars_web`
                 SET
                     `status` = 'update',
                     `finger_print` = '%s',
@@ -383,23 +355,22 @@ def create_or_update_pkgs_shares_ars_web(xmppobject,
                 WHERE
                     (`ars_share_id` = '%s')
                         AND (`packages_id` = '%s');""" % (fingerprint,
-                                                                      sizepackage,
-                                                                      dateeditionbase,
-                                                                      idars,
-                                                                      idpackage)
+                                                          sizepackage,
+                                                          dateeditionbase,
+                                                          idars,
+                                                          idpackage)
         if xmppobject.config.debug_info_ars_synchro:
             logger.info("Update fingerprint in base %s for ars %s\n%s" % (fingerprint,
-                                                                         xmppobject.boundjid.user,
-                                                                         sql))
+                                                                          xmppobject.boundjid.user,
+                                                                          sql))
         result = pkgsdata.commit(sql)
         if result:
             if xmppobject.config.debug_info_ars_synchro:
-                logger.info("update result %s"%result)
+                logger.info("update result %s" % result)
     else:
-        # on insert
         logger.info("INSERT %s" % type(result))
-        #
-        sql= """INSERT INTO
+
+        sql = """INSERT INTO
                     `pkgs`.`pkgs_shares_ars_web` (`ars_share_id`,
                                                   `packages_id`,
                                                   `status`,
@@ -412,10 +383,10 @@ def create_or_update_pkgs_shares_ars_web(xmppobject,
                             '%s',
                             '%s',
                             FROM_UNIXTIME(%s));""" % (idars,
-                                         idpackage,
-                                         fingerprint,
-                                         sizepackage,
-                                         dateeditionbase)
+                                                      idpackage,
+                                                      fingerprint,
+                                                      sizepackage,
+                                                      dateeditionbase)
         if xmppobject.config.debug_info_ars_synchro:
             logger.info("Insert fingerprint in base %s for ars %s\n%s" % (fingerprint,
                                                                           xmppobject.boundjid.user,
@@ -423,7 +394,7 @@ def create_or_update_pkgs_shares_ars_web(xmppobject,
         result = pkgsdata.commit(sql)
         if result:
             if xmppobject.config.debug_info_ars_synchro:
-                logger.info("insert result %s"%result)
+                logger.info("insert result %s" % result)
 
 class pkgsbase():
     def __init__(self, xmppobject):
@@ -439,7 +410,7 @@ class pkgsbase():
                 self.dbconnectionpkgs = \
                     MySQLdb.connect(host=self.xmppobject.config.pkgs_dbhost,
                                     user=self.xmppobject.config.pkgs_dbuser,
-                                    passwd=self.xmppobject.config.pkgs_dbpasswd ,
+                                    passwd=self.xmppobject.config.pkgs_dbpasswd,
                                     db=self.xmppobject.config.pkgs_dbname,
                                     port=self.xmppobject.config.pkgs_dbport,
                                     connect_timeout=self.xmppobject.config.pkgs_connect_timeout)
@@ -453,7 +424,7 @@ class pkgsbase():
             except Exception as e:
                 self.boolconnectionbase = False
                 self.dbconnectionpkgs = None
-                logger.error("\n%s"%(traceback.format_exc()))
+                logger.error("\n%s" % (traceback.format_exc()))
                 return self.dbconnectionpkgs
 
     def disconect_pkgs(self):
@@ -481,8 +452,8 @@ class pkgsbase():
                 finally:
                     cursor.close()
         except Exception as e:
-                print "Error: unable to connection %s" % str(e)
-                return results
+            logger.error("Error: unable to connection %s" % str(e))
+            return results
 
     def commit(self, query):
         results = None
@@ -503,23 +474,22 @@ class pkgsbase():
                 finally:
                     cursor.close()
         except Exception as e:
-                logger.error("Error: unable to connection %s" % str(e))
-                return results
+            logger.error("Error: unable to connection %s" % str(e))
+            return results
 
 
 class lncreate:
-
     def __init__(self,
                  list_path_abs,
                  path_abs_dest,
                  groupname="syncthing",
                  username="syncthing",
-                 mode = 0o755):
+                 mode=0o755):
         if isinstance(list_path_abs, basestring):
-            self.list_path_abs =  [str(x.strip()) \
+            self.list_path_abs = [str(x.strip()) \
                                     for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*',
-                                                  list_path_abs) \
-                                        if x.strip() != "" ]
+                                                      list_path_abs) \
+                                        if x.strip() != ""]
         elif isinstance(list_path_abs, list):
             self.list_path_abs = list_path_abs
         else:
@@ -528,31 +498,26 @@ class lncreate:
         self.groupname = groupname
         self.username = username
         self.path_abs_dest = path_abs_dest
-        # test si repertoire de destination existe.
         if not os.path.exists(self.path_abs_dest):
-            os.makedirs(self.path_abs_dest, mode )
+            os.makedirs(self.path_abs_dest, mode)
 
-    def supp_old_link(self):
+    def remove_links(self):
         for f in os.listdir(self.path_abs_dest):
             if len(f) == 36:
-                
+
                 ln = os.path.join(self.path_abs_dest, f)
                 if not os.path.exists(ln) and os.path.islink(ln):
                     os.unlink(ln)
 
-    def creation_link_symbolique_directory(self):
-        self.supp_old_link()
+    def create_symlink(self):
+        self.remove_links()
         for srcrep in self.list_path_abs:
             for f in os.listdir(srcrep):
                 if len(f) == 36:
-                    
                     srcdir = os.path.join(srcrep, f)
                     destdir = os.path.join(self.path_abs_dest, f)
-                    print  destdir
-                    print srcdir
                     if not os.path.islink(destdir):
                         os.symlink(srcdir, destdir)
-                    else:    
-                        # replace le link
+                    else:
                         os.unlink(destdir)
                         os.symlink(srcdir, destdir)

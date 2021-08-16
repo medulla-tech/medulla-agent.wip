@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; -*-
 #
-# (c) 2016 - 2018 siveo, http://www.siveo.net
+# (c) 2016 - 2021 siveo, http://www.siveo.net
 #
 # This file is part of Pulse 2, http://www.siveo.net
 #
@@ -54,13 +54,13 @@ class statcallplugin:
             self.param["count_%s_in_time"%self.name]+=1
             self.param["count_%s_up_time"%self.name]+=1
             if timeseconde > self.param["time_between_checks_%s"%self.name]:
-                logger.info("The plugin %s have called by %s "\
-                         "%s times in %s secondes (rate = %s)"%(self.name,
+                logger.debug("The plugin %s has called by %s "\
+                         "%s times in %s seconds (rate = %s)"%(self.name,
                                                                 self.obj.boundjid.bare,
                                                                 self.param["count_%s_in_time"%self.name],
                                                                 timeseconde,
                                                                 self.param["count_%s_in_time"%self.name]/timeseconde))
-                logger.info("uptime call : %s times in %s secondes (rate = %s)"%(
+                logger.debug("uptime call : %s times in %s seconds (rate = %s)"%(
                                                                 self.param["count_%s_up_time"%self.name],
                                                                 timesecondeall,
                                                                 self.param["count_%s_up_time"%self.name]/timesecondeall))
@@ -70,13 +70,13 @@ class statcallplugin:
             logger.error("\n%s" % (traceback.format_exc()))
 
     def display_param_config(self, msg=""):
-        logger.info("--------------------- PARAM %s STATS %s ---------------------------" % (msg,
+        logger.debug("--------------------- PARAM %s STATS %s ---------------------------" % (msg,
                                                                                              self.obj.boundjid.bare) )
-        logger.info("Parametter stat call plugin %s" % (self.name))
-        logger.info("Parametter laps_time_stat =  %s" % (self.param["time_between_checks_%s"%self.name]))
+        logger.debug("Parametter stat call plugin %s" % (self.name))
+        logger.debug("Parametter time_between_checks =  %s" % (self.param["time_between_checks_%s"%self.name]))
         timestamp = datetime.datetime.fromtimestamp(self.param["star_time_%s"%self.name])
-        logger.info("first call to %s" % timestamp.strftime('%Y-%m-%d %H:%M:%S'))
-        logger.info("--------------------- PARAM STATS ---------------------------")              
+        logger.debug("first call to %s" % timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        logger.debug("--------------------- PARAM STATS ---------------------------")
 
     def load_param_lap_time_stat_(self, Config):
         if Config.has_option("parameters", "time_between_checks"):

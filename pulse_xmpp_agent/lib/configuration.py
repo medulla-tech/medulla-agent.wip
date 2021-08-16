@@ -60,10 +60,10 @@ def changeconfigurationsubtitute(conffile, confsubtitute):
     if not Config.has_section('substitute'):
         Config.add_section('substitute')
     for t in confsubtitute['conflist']:
-        listunique = uniq(confsubtitute[t])
-        Config.set('substitute', t, ",".join(listunique))
-        logger.info("application substitut %s for %s"%(listunique[0],t))
-    logger.info("write parameter substitute")
+        uniq_list = uniq(confsubtitute[t])
+        Config.set('substitute', t, ",".join(uniq_list))
+        logger.info("application substitut %s for %s"%(uniq_list[0],t))
+    logger.debug("writing parameters of the substitutes")
     with open(conffile, 'w') as configfile:
         Config.write(configfile)
 
@@ -103,11 +103,7 @@ def alternativeclusterconnection(conffile, data):
         conffile: the configuration file in which we add the alternative cluster
         data: the informations about the cluster
     """
-    # todo del of list the ars without ip
-    #for arsdataconection in data:
-        #if ipfromdns(str(arsdataconection[0])) != "" and check_exist_ip_port(ipfromdns(str(arsdataconection[0])), str(arsdataconection[1])):
-            #print ipfromdns(str(arsdataconection[0]))
-    logger.info("rewrite file %s cluster.ini for alternative connection" % conffile)
+    logger.debug("We write the file %s to handle alternative connections" % conffile)
     with open(conffile, 'w') as configfile:
         if len(data) != 0:
             listalternative = [str(x[2]) for x in data]
@@ -618,15 +614,11 @@ class confParameter:
                 self.logfile = os.path.join(
                     "/", "var", "log", "pulse", defaultnamelogfile)
 
-        # information configuration dynamique
         if Config.has_option("configuration_server", "confserver"):
             self.confserver = Config.get('configuration_server', 'confserver')
             listserver = [ ipfromdns(x.strip()) for x in self.confserver.split(",")
                         if x.strip() != ""]
-            # 1 NDD peut etre identique a 1 ip eg confserver = jfk-mmc.siveo.lan, 212.83.136.107
-            # jfk-mmc.siveo.lan correspond a 212.83.136.107
             listserver = list(set(listserver))
-            # on choisie aleatoirement 1 frontal
             self.confserver = listserver[random.randint(0,len(listserver)-1)]
         if Config.has_option("configuration_server", "confport"):
             self.confport = Config.get('configuration_server', 'confport')
@@ -949,6 +941,29 @@ class confParameter:
         if os.path.isfile(namefile+".local"):
             Config.read(namefile+".local")
         return Config.items("parameters")
+
+        if Config.has_option('fileviewer', 'host'):
+            self.fv_host = Config.get('fileviewer', 'host')
+        else:
+            self.fv_host = "127.0.0.1"
+
+        if Config.has_option('fileviewer', 'port'):
+            self.fv_port = Config.getint('fileviewer', 'port')
+        else:
+            self.fv_port = 52044
+
+        if Config.has_option('fileviewer', 'maxwidth'):
+            self.fv_maxwidth = Config.getint('fileviewer', 'maxwidth')
+        else:
+            self.fv_maxwidth = 800
+
+        if Config.has_option('fileviewer', 'minwidth'):
+            self.fv_minwidth = Config.getint('fileviewer', 'minwidth')
+        else:
+            self.fv_minwidth = 600
+
+        if self.fv_minwidth > self.fv_maxwidth:
+            self.fv_minwidth, self.fv_maxwidth = self.fv_maxwidth, self.fv_minwidth
 
     def _levellogdata(self, levelstring):
         strlevel = levelstring.upper()

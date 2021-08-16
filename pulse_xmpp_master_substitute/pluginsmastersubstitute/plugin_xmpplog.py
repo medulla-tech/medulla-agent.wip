@@ -91,7 +91,7 @@ def createlog(xmppobject, dataobj):
         module = dataobj['module'] if 'module' in dataobj else ""
         action = dataobj['action'] if 'action' in dataobj else ""
         fromuser = dataobj['fromuser'] if 'fromuser' in dataobj else ""
-        touser = dataobj['touser'] if 'touser' in dataobj  else xmppobject.boundjid.bare
+        touser = dataobj['touser'] if 'touser' in dataobj else xmppobject.boundjid.bare
         XmppMasterDatabase().setlogxmpp(text,
                                         type=type,
                                         sessionname=sessionname,

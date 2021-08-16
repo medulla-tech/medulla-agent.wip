@@ -39,11 +39,11 @@ import ConfigParser
 import netaddr
 from math import cos, sin, atan2, sqrt
 try:
-    from lib.stat import statcallplugin 
+    from lib.stat import statcallplugin
     statfuncton = True
 except:
     statfuncton = False
-    
+
 logger = logging.getLogger()
 DEBUGPULSEPLUGIN = 25
 
@@ -414,6 +414,8 @@ def Algorithm_Rule_Attribution_Agent_Relay_Server(objectxmpp,
                 if len(result1) > 0:
                     if showinfomachine:
                         logger.info("Applied rule : AD organized by machines")
+                        logger.info("We matched the relayserver ID: %s" % result1)
+
                     result = XmppMasterDatabase().IpAndPortConnectionFromServerRelay(result1[0].id)
                     msg_log("AD organized by machine",
                             data['information']['info']['hostname'],
@@ -761,7 +763,7 @@ def read_conf_assessor(objectxmpp):
     """
     objectxmpp.assessor_agent_errorconf = False
     namefichierconf = plugin['NAME'] + ".ini"
-    objectxmpp.pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf )
+    objectxmpp.pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf)
     if not os.path.isfile(objectxmpp.pathfileconf):
         logger.error("plugin %s\nConfiguration file  missing\n  %s" % (plugin['NAME'],
                                                                        objectxmpp.pathfileconf))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# (c) 2016 siveo, http://www.siveo.net
+# (c) 2016-2021 siveo, http://www.siveo.net
 #
 # This file is part of Pulse 2, http://www.siveo.net
 #
@@ -37,7 +37,7 @@ DEBUGPULSEPLUGIN = 25
 
 # this plugin calling to starting agent
 
-plugin = {"VERSION" : "1.4", "NAME" : "loadautoupdate", "TYPE" : "substitute"}
+plugin = {"VERSION": "1.4", "NAME": "loadautoupdate", "TYPE": "substitute"}
 
 def action( objectxmpp, action, sessionid, data, msg, dataerreur):
     logger.debug("=====================================================")
@@ -66,20 +66,23 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
                                 repeat=True)
 
 def updatingmachine(self):
+    """
+        This is used to monitor the machines that needs to be updated 
+    """
     try:
         descriptoragent = self.Update_Remote_Agentlist.get_md5_descriptor_agent()
         datasend = {"action": "updateagent",
-                "data": {'subaction': 'descriptor',
-                            'descriptoragent': descriptoragent},
-                'ret': 0,
-                'sessionid': getRandomName(5, "updateagent")}
-        rest = XmppMasterDatabase().getUpdate_machine(status = "updating",
+                    "data": {'subaction': 'descriptor',
+                             'descriptoragent': descriptoragent},
+                    "ret": 0,
+                    "sessionid": getRandomName(5, "updateagent")}
+        machines_to_update = XmppMasterDatabase().getUpdate_machine(status = "updating",
                                                       nblimit=objectxmpp.modeupdatingnbmachine)
-        logger.debug("rest = %s" % rest)
-        for dd in rest:
+        logger.debug("machines_to_update = %s" % machines_to_update)
+        for machine in machines_to_update:
             if self.autoupdatebyrelay:
-                datasend['data']['ars_update'] = dd[1]
-            self.send_message(dd[0],
+                datasend['data']['ars_update'] = machine[1]
+            self.send_message(machine[0],
                       mbody=json.dumps(datasend),
                       mtype='chat')
     except Exception as e:

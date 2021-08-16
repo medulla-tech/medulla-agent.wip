@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# (c) 2016 siveo, http://www.siveo.net
+# (c) 2016-2021 siveo, http://www.siveo.net
 #
 # This file is part of Pulse 2, http://www.siveo.net
 #
@@ -222,32 +222,32 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
             #clean if not session
             utils.cleanbacktodeploy(objectxmpp)
             return
-        # check  complet descriptor
+        # Check if the descriptor is complete
         if 'descriptor' in data and 'advanced' not in data:
             objectxmpp.xmpplog('<span class="log_err">Abort deployement section avanced missing in descriptor</span>',
-                                       type='deploy',
-                                       sessionname=sessionid,
-                                       priority=-1,
-                                       action="xmpplog",
-                                       who=strjidagent,
-                                       how="",
-                                       why="",
-                                       module="Deployment | Error",
-                                       date=None,
-                                       fromuser="AM %s" % strjidagent,
-                                       touser="")
+                               type='deploy',
+                               sessionname=sessionid,
+                               priority=-1,
+                               action="xmpplog",
+                               who=strjidagent,
+                               how="",
+                               why="",
+                               module="Deployment | Error",
+                               date=None,
+                               fromuser="AM %s" % strjidagent,
+                               touser="")
             objectxmpp.xmpplog('DEPLOYMENT TERMINATE',
-                                       type='deploy',
-                                       sessionname=sessionid,
-                                       priority=-1,
-                                       action="xmpplog",
-                                       who=strjidagent,
-                                       how="",
-                                       why="",
-                                       module="Deployment | Terminate | Notify",
-                                       date=None,
-                                       fromuser="AM %s" % strjidagent,
-                                       touser="")
+                               type='deploy',
+                               sessionname=sessionid,
+                               priority=-1,
+                               action="xmpplog",
+                               who=strjidagent,
+                               how="",
+                               why="",
+                               module="Deployment | Terminate | Notify",
+                               date=None,
+                               fromuser="AM %s" % strjidagent,
+                               touser="")
             objectxmpp.session.clearnoevent(sessionid)
             utils.cleanbacktodeploy(objectxmpp)
             return
@@ -707,39 +707,38 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
         if 'descriptor' in data and 'advanced' not in data:
             logger.debug("DEPLOYMENT ABORTED: ADVANCED DESCRIPTOR MISSING")
             objectxmpp.xmpplog('<span class="log_err">Deployment aborted: section key "avanced" missing</span>',
-                                       type='deploy',
-                                       sessionname=sessionid,
-                                       priority=-1,
-                                       action="xmpplog",
-                                       who=strjidagent,
-                                       how="",
-                                       why="",
-                                       module="Deployment | Error",
-                                       date=None,
-                                       fromuser="AM %s" % strjidagent,
-                                       touser="")
+                               type='deploy',
+                               sessionname=sessionid,
+                               priority=-1,
+                               action="xmpplog",
+                               who=strjidagent,
+                               how="",
+                               why="",
+                               module="Deployment | Error",
+                               date=None,
+                               fromuser="AM %s" % strjidagent,
+                               touser="")
             objectxmpp.xmpplog('DEPLOYMENT TERMINATE',
-                                       type='deploy',
-                                       sessionname=sessionid,
-                                       priority=-1,
-                                       action="xmpplog",
-                                       who=strjidagent,
-                                       how="",
-                                       why="",
-                                       module="Deployment | Terminate | Notify",
-                                       date=None,
-                                       fromuser="AM %s" % strjidagent,
-                                       touser="")
+                               type='deploy',
+                               sessionname=sessionid,
+                               priority=-1,
+                               action="xmpplog",
+                               who=strjidagent,
+                               how="",
+                               why="",
+                               module="Deployment | Terminate | Notify",
+                               date=None,
+                               fromuser="AM %s" % strjidagent,
+                               touser="")
             objectxmpp.session.clearnoevent(sessionid)
             utils.cleanbacktodeploy(objectxmpp)
-            
-            
+
             datalog = {'action': "result%s" % action,
-                               'sessionid': sessionid,
-                               'ret': 255,
-                               'base64': False,
-                               'data': data
-                               }
+                       'sessionid': sessionid,
+                       'ret': 255,
+                       'base64': False,
+                       'data': data
+                      }
             objectxmpp.send_message(mto="master@pulse/MASTER",
                                     mbody=json.dumps(datalog),
                                     mtype='chat')

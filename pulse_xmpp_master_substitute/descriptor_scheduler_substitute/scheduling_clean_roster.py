@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# (c) 2016 siveo, http://www.siveo.net
+# (c) 2016-2021 siveo, http://www.siveo.net
 #
 # This file is part of Pulse 2, http://www.siveo.net
 #
@@ -19,26 +19,28 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 """
+    This plugin is used to clean the rosters.
 
-    this plugins nettoy les roters none none dans le roster.
+    To use this plugin, we need to have the substitutes on the same server as the ejabberd server.
 
-    file : descriptor_scheduler_substitute/scheduling_clean_roster.py
-    
-    # Pour utiliser ce plugin, il faut que le substitut subscribe soit sur la meme machine que ejabberd.
-    
-    # dans 1 cas different il faudrat prevoir 1 iq vers l ars de son dpmaine pour executer ce plugin.
+    TODO: If we need a different testcase, we will need to use IQs.
 """
-import json
 import logging
-import sys
 import traceback
 from lib.utils import simplecommand
 
-plugin = {"VERSION" : "1.0", "NAME" : "scheduling_clean_roster",  "TYPE" : "all", "SCHEDULED" : True}
+plugin = {"VERSION": "1.0", "NAME": "scheduling_clean_roster", "TYPE": "all", "SCHEDULED": True}
 
-SCHEDULE = {"schedule" : "5 0 * * *", "nb" : -1}# nb  -1 infinie
+SCHEDULE = {"schedule": "5 0 * * *", "nb" : -1}
 
 def schedule_main(objectxmpp):
+    """
+    This plugin is used to clean the rosters.
+
+    To use this plugin, we need to have the substitutes on the same server as the ejabberd server.
+
+    TODO: If we need a different testcase, we will need to use IQs.
+    """
     logging.getLogger().debug("==============Plugin scheduled==============")
     logging.getLogger().debug(plugin)
     logging.getLogger().debug("============================================")
@@ -46,10 +48,10 @@ def schedule_main(objectxmpp):
         logging.getLogger().debug("%s " % objectxmpp.boundjid.bare)
         result = simplecommand("ejabberdctl process_rosteritems delete none:to none %s any" % objectxmpp.boundjid.bare)
         logging.getLogger().debug("cmd = ejabberdctl process_rosteritems delete none:to none %s any" % objectxmpp.boundjid.bare)
-        logging.getLogger().debug("code return command = %s"% result['code'])
-        #logging.getLogger().debug("code return command = %s"% json.dumps(result['result'], indent=4))
-        logging.getLogger().debug("code return command = %s"% result['result'][0])
-        
+        logging.getLogger().debug("code return command = %s" % result['code'])
+        logging.getLogger().debug("code return command = %s" % result['result'][0])
+
         logging.getLogger().debug("============================================")
-    except Exception as e:
-        logging.getLogger().error("%s" % traceback.format_exc())
+    except Exception as execution_error:
+        logging.getLogger().error("The scheduling_clean_roster plugin failed to run with the error %s" % execution_error)
+        logging.getLogger().error("We encountered the backtrace %s" % traceback.format_exc())

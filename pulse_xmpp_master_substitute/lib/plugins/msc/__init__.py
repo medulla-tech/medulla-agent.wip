@@ -213,26 +213,15 @@ class MscDatabase(DatabaseHelper):
         self.config = confParameter()
 
         self.session = None
-        #try:
-            #self.config.msc_dbpoolrecycle
-            #self.poolrecycle = self.config.msc_dbpoolrecycle
-        #except Exception:
-            #self.poolrecycle = self.config.dbpoolrecycle
-
-        #try:
-            #self.config.msc_dbpoolsize
-            #self.poolsize = self.config.msc_dbpoolsize
-        #except Exception:
-            #self.poolsize = self.config.dbpoolsize
         self.logger.info("Msc parameters connections is "\
             " user = %s,host = %s, port = %s, schema = %s,"\
-            " poolrecycle = %s, poolsize = %s, timeout %s"%(self.config.msc_dbuser,
-                                                self.config.msc_dbhost,
-                                                self.config.msc_dbport,
-                                                self.config.msc_dbname,
-                                                self.config.msc_dbpoolrecycle,
-                                                self.config.msc_dbpoolsize,
-                                                self.config.msc_dbpooltimeout))
+            " poolrecycle = %s, poolsize = %s, timeout %s" % (self.config.msc_dbuser,
+                                                              self.config.msc_dbhost,
+                                                              self.config.msc_dbport,
+                                                              self.config.msc_dbname,
+                                                              self.config.msc_dbpoolrecycle,
+                                                              self.config.msc_dbpoolsize,
+                                                              self.config.msc_dbpooltimeout))
         try:
             self.engine_mscmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.msc_dbuser,
                                                                                     self.config.msc_dbpasswd,

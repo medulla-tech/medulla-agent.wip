@@ -297,7 +297,6 @@ def scheduledeploy(self):
                                                                     (timef/nb_machine_select_for_deploy_cycle) \
                                                                     if nb_machine_select_for_deploy_cycle else "--" ))
 
-
 def scheduledeployrecoveryjob(self):
     msglog = []
     wol_set = set()
@@ -585,8 +584,8 @@ def applicationdeployjsonuuid(self,
         objmachine = XmppMasterDatabase().getGuacamoleRelayServerMachineUuid(uuidmachine, None)
         if 'error' in objmachine and objmachine['error'] == "MultipleResultsFound" :
             logger.warn('getGuacamoleRelayServerMachineUuid %s' % objmachine['error'])
-            objmachine1 = XmppMasterDatabase().get_machine_doublon_uuidinventory(uuidmachine, None)
-            logger.warn('get_machine_doublon_uuidinventory %s' % objmachine1)
+            objmachine1 = XmppMasterDatabase().get_machine_with_dupplicate_uuidinventory(uuidmachine, None)
+            logger.warn('get_machine_with_dupplicate_uuidinventory %s' % objmachine1)
             grparray=[]
             jidarray=[]
             keysyncthingarray=[]
@@ -1269,7 +1268,7 @@ def read_conf_loaddeployment(objectxmpp):
             objectxmpp.deployment_scan_interval =  Config.getint('parameters', 'deployment_scan_interval')
         else:
             objectxmpp.deployment_scan_interval = 10
-        
+
         if Config.has_option("parameters", "deployment_nbr_mach_cycle"):
             objectxmpp.deployment_nbr_mach_cycle =  Config.getint('parameters', 'deployment_nbr_mach_cycle')
         else:
