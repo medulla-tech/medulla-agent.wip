@@ -182,17 +182,16 @@ class manage_scheduler:
     def call_scheduling_main(self, name, *args, **kwargs):
         if self.objectxmpp.config.scheduling_plugin_action :
             if name not in self.objectxmpp.config.excludedscheduledplugins :
-                mod = __import__("scheduling_%s"%name)
                 logging.getLogger().debug("execution of the plugin scheduling_%s" % name)
-                count = 0
                 try:
                     count = getattr(self.objectxmpp, "num_call_scheduling_%s" % name)
+                    count=count+1
                 except AttributeError:
-                    count = 0
-                    setattr(self.objectxmpp, "num_call_scheduling_%s"%name, count)
+                    count=0
                 logging.getLogger().debug("num_call_scheduling_%s  %s" % (name, count))
+                setattr(self.objectxmpp, "num_call_scheduling_%s"%name, count)
+                mod = __import__("scheduling_%s"%name)
                 mod.schedule_main(*args, **kwargs)
-                setattr(self.objectxmpp, "num_call_scheduling_%s" % name, count + 1)
             else:
                 logging.getLogger().debug("The plugin %s is not allowed to run as it has been excluded" % name)
         else:
