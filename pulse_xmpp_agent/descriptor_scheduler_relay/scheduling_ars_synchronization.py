@@ -5,7 +5,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 """
-This plugin check regularly if packages have been modified
+This plugin check regularly if packages have been modified.
+
+Ce plugin est a utiliser uniquement pour les packages servers separe et repartit dans les ars.
+
+******* Warning *************
+this plugin est pour faire synchroniser dans les tables les partage quand on utilise les package server repartit.
+ne pas activer ce plugin avec separation logique des partages.
+Pour la separation logique des partage, on utilise le plugin scheduling_ars_synchro_package
 """
 import json
 import logging
