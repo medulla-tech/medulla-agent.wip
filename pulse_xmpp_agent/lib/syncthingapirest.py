@@ -74,6 +74,8 @@ def read_serverannonce(configfile="/var/lib/syncthing-depl/.config/syncthing/con
 def conf_ars_deploy(port=23000,
                     configfile="/var/lib/syncthing-depl/.config/syncthing/config.xml",
                     name="pulse"):
+    if name != "":
+        logger.info("xml conf : %s device  %s" % (configfile, name))
     root, adressurl = read_serverannonce(configfile)
     if adressurl != "":
         pathxmldevice = ".//device[@name ='%s']" % name
@@ -86,7 +88,7 @@ def conf_ars_deploy(port=23000,
                 msg ="Two devices or more named '%s' are configured in Syncthing."\
                     " Please check Syncthing config [%s] to remove the unused one"%(name,
                                                                                     configfile)
-            logger.error("function : conf_ars_deploy : \n%s"%msg)
+            logger.error("%s"%msg)
             pathxmldeviceerrormsg = ".//device[@name ='%s']" % name
             listresulterrordevice = root.xpath(pathxmldeviceerrormsg)
             for devicexml in listresulterrordevice:
@@ -113,11 +115,16 @@ def iddevice(configfile="/var/lib/pulse2/.config/syncthing/config.xml",
             hostname = socket.gethostname()
 
         if hostname != "":
-            logger.info("xml conf : %s device id for hostname machine %s" % (configfile, hostname))
+            logger.info("xml conf : %s device  %s" % (configfile, hostname))
             tree = etree.parse(configfile)
             root = tree.getroot()
             pathxmldevice = ".//device[@name='%s']" % hostname
             listresult = root.xpath(pathxmldevice)
+            if len(listresult) == 0:
+                msg ="%s device is not present in Synthing configuration."\
+                            " Device id no exist for this device missing" % hostname
+                logger.warning("%s"%msg)
+                return ""
             devid = listresult[0].attrib['id']
             logger.info("find device id %s" % (devid))
             return devid
