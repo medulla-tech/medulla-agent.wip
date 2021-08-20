@@ -301,6 +301,7 @@ rm -fr %buildroot%{python2_sitelib}/pulse_xmpp_agent/descriptor_scheduler_machin
 rm -fr %buildroot%{python2_sitelib}/pulse_xmpp_agent/pluginsmachine/plugin_*.py
 cp -fv pulse_xmpp_agent/plugins_common/plugin_* %buildroot%{python2_sitelib}/pulse_xmpp_agent/pluginsrelay
 cp -fv pulse_xmpp_agent/descriptor_scheduler_common/scheduling_*.py %buildroot%{python2_sitelib}/pulse_xmpp_agent/descriptor_scheduler_relay/
+mkdir -p %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/sessiondeploysubstitute
 chmod +x %buildroot%{python2_sitelib}/pulse_xmpp_agent/pulse-xmpp-agent-log.py
 chmod +x %buildroot%{python2_sitelib}/pulse_xmpp_agent/agentxmpp.py
 chmod +x %buildroot%{python2_sitelib}/pulse_xmpp_agent/package_watching.py
@@ -338,6 +339,7 @@ cp pulse_xmpp_master_substitute/agentversion %buildroot%{python2_sitelib}/pulse_
 cp -r pulse_xmpp_master_substitute/bin/ %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/
 cp -r pulse_xmpp_master_substitute/lib/  %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/
 cp -r pulse_xmpp_master_substitute/pluginsmastersubstitute/ %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/
+cp -r pulse_xmpp_master_substitute/descriptor_scheduler_substitutedescriptor_scheduler_substitute %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/
 cp -r pulse_xmpp_master_substitute/script/ %buildroot%{python2_sitelib}/pulse_xmpp_master_substitute/
 mkdir -p %buildroot%_sysconfdir/pulse-xmpp-agent-substitute/
 cp pulse_xmpp_master_substitute/config/*.ini %buildroot%_sysconfdir/pulse-xmpp-agent-substitute/

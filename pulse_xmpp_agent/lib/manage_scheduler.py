@@ -163,10 +163,10 @@ class manage_scheduler:
     def process_on_event(self):
         now = datetime.now()
         secondeunix = time.mktime(now.timetuple())
-        deleted=[]
+        deleted = []
         for t in self.taches:
-            if (secondeunix - t["exectime"])  > 0:
-                #replace exectime
+            if (secondeunix - t["exectime"]) > 0:
+                # Replace exectime
                 t["count"] = t["count"] + 1
                 if "nbcount" in t and t["nbcount"] != -1 and  t["count"] > t["nbcount"]:
                     deleted.append(t)
@@ -185,12 +185,12 @@ class manage_scheduler:
                 logging.getLogger().debug("execution of the plugin scheduling_%s" % name)
                 try:
                     count = getattr(self.objectxmpp, "num_call_scheduling_%s" % name)
-                    count=count+1
+                    count = count + 1
                 except AttributeError:
                     count=0
                 logging.getLogger().debug("num_call_scheduling_%s  %s" % (name, count))
-                setattr(self.objectxmpp, "num_call_scheduling_%s"%name, count)
-                mod = __import__("scheduling_%s"%name)
+                setattr(self.objectxmpp, "num_call_scheduling_%s" % name, count)
+                mod = __import__("scheduling_%s" % name)
                 mod.schedule_main(*args, **kwargs)
             else:
                 logging.getLogger().debug("The plugin %s is not allowed to run as it has been excluded" % name)
@@ -198,10 +198,10 @@ class manage_scheduler:
             logging.getLogger().debug("the parameter scheduling_plugin_action does not allow the call of the plugin %s" % name)
 
     def call_scheduling_mainspe(self, name, *args, **kwargs):
-        mod = __import__("scheduling_%s"%name)
+        mod = __import__("scheduling_%s" % name)
 
         return mod.schedule_main
 
     def litschedule(self, name):
-        mod = __import__("scheduling_%s"%name)
+        mod = __import__("scheduling_%s" % name)
         return mod.SCHEDULE

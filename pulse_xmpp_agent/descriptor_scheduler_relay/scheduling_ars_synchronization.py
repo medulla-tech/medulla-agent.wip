@@ -47,7 +47,7 @@ def schedule_main(xmppobject):
             if xmppobject.num_call_scheduling_ars_synchronization == 0:
                 __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata)
             pkgsdata = pkgsbase(xmppobject)
-                
+
             lien_obj = lncreate(xmppobject.config.list_folder_sources,
                                 xmppobject.config.location_packages)
             # Only for ARS
@@ -194,8 +194,7 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
     xmppobject.config.pakage_print_fingers_base = pakage_print_fingers_base
 
     logger.info("%s" % xmppobject.config.pakage_print_fingers_base)
-    xmppobject.config.list_folder_sources = ['/var/lib/pulse2/packagesglobal',
-                                             '/var/lib/pulse2/packageslocal']
+    xmppobject.config.list_folder_sources = ['/var/lib/pulse2/packages/sharing/global']
     xmppobject.config.location_packages = '/var/lib/pulse2/packages'
     xmppobject.config.modulo = 20
 
@@ -243,18 +242,18 @@ def __read_conf_scheduling_ars_synchronization(xmppobject, pkgsdata):
                                                 for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*', list_folder_sources) \
                                                     if x.strip() != ""]
         # FIXME: Implement me
-        # if Config.has_section("figersprint"):
-            # if Config.has_option("figersprint",
+        # if Config.has_section("fingerprint"):
+            # if Config.has_option("fingerprint",
                                  # "exclude"):
-                # exclude = Config.get('figersprint',
+                # exclude = Config.get('fingerprint',
                                       # 'exclude')
                 # xmppobject.config.exclude =  [str(x.strip()) \
                                                 # for x in re.split(r'[;,:@\(\)\[\]\|\s]\s*', exclude) \
                                                     # if x.strip() != "" ]
 
-            # if Config.has_option("figersprint",
+            # if Config.has_option("fingerprint",
                                  # "modulo"):
-                # xmppobject.config.modulo = Config.getint('figersprint',
+                # xmppobject.config.modulo = Config.getint('fingerprint',
                                                          # 'modulo')
         # if Config.has_section("xmpp_master_db"):
             # if Config.has_option("xmpp_master_db",
