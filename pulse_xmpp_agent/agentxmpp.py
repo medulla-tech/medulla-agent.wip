@@ -1537,9 +1537,9 @@ class MUCBot(sleekxmpp.ClientXMPP):
             for sub_subscribed in self.sub_subscribe_all:
                 if sub_subscribed == self.boundjid.bare or sub_subscribed == self.sub_subscribe:
                     continue
-                if t not in  self.limit_message_presence_clean_substitute:
-                    self.send_presence (pto=t, ptype='unsubscribe')
-                    self.update_roster(t, subscription='remove')
+                if sub_subscribed not in  self.limit_message_presence_clean_substitute:
+                    self.send_presence (pto=sub_subscribed, ptype='unsubscribe')
+                    self.update_roster(sub_subscribed, subscription='remove')
         except Exception:
             logger.error("\n%s" % (traceback.format_exc()))
 
@@ -1548,9 +1548,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
         self.send_presence()
         logger.info("subscribe to %s agent" % self.sub_subscribe.user)
         self.limit_message_presence_clean_substitute = []
+        self.ipconnection = self.config.Server
+        self.config.ipxmpp = getIpXmppInterface(self.config.Server, self.config.Port)
         self.unsubscribe_agent()
         self.unsubscribe_substitute_subscribe()
-        self.ipconnection = self.config.Server
 
         self.send_presence (pto=self.sub_subscribe, ptype='subscribe')
         if  self.config.agenttype in ['relayserver']:
@@ -1560,8 +1561,6 @@ class MUCBot(sleekxmpp.ClientXMPP):
                     self.ipconnection = self.config.public_ip_relayserver
             except Exception:
                 pass
-
-        self.config.ipxmpp = getIpXmppInterface(self.config.Server, self.config.Port)
 
         self.agentrelayserverrefdeploy = self.config.jidchatroomcommand.split('@')[0][3:]
         logging.log(DEBUGPULSE,"Roster agent \n%s"%self.client_roster)
