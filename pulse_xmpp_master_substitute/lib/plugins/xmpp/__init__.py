@@ -28,7 +28,7 @@ xmppmaster database handler
 # SqlAlchemy
 from sqlalchemy import create_engine, MetaData, select, func, and_, desc, or_, distinct, not_
 from sqlalchemy.orm import sessionmaker, Query
-from sqlalchemy.exc import DBAPIError, NoSuchTableError
+from sqlalchemy.exc import DBAPIError, NoSuchTableError, IntegrityError
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.ext.automap import automap_base
 from datetime import date, datetime, timedelta
@@ -173,11 +173,12 @@ class XmppMasterDatabase(DatabaseHelper):
                                                                    self.config.xmpp_dbpoolsize,
                                                                    self.config.xmpp_dbpooltimeout))
         try:
-            self.engine_xmppmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s' % (self.config.xmpp_dbuser,
+            self.engine_xmppmmaster_base = create_engine('mysql://%s:%s@%s:%s/%s?charset=%s' % (self.config.xmpp_dbuser,
                                                                                      self.config.xmpp_dbpasswd,
                                                                                      self.config.xmpp_dbhost,
                                                                                      self.config.xmpp_dbport,
-                                                                                     self.config.xmpp_dbname),
+                                                                                     self.config.xmpp_dbname,
+                                                                                     self.config.charset),
                                                         pool_recycle=self.config.xmpp_dbpoolrecycle,
                                                         pool_size=self.config.xmpp_dbpoolsize,
                                                         pool_timeout=self.config.xmpp_dbpooltimeout,
@@ -7947,7 +7948,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
     @DatabaseHelper._sessionm
     def getUpdate_machine(self,
                           session,
-                          status="updating",
+                          status="ready",
                           nblimit=1000):
         """
             This function is used to retrieve the machines in the pending list
@@ -7959,7 +7960,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
                 nblimit: Number maximum of machines allowed to be updated at once.
         """
 
-        sql ="""SELECT
+        sql = """SELECT
                     MIN(id) AS minid , MAX(id) AS maxid
                 FROM
                     (SELECT id
@@ -7967,9 +7968,9 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
                             update_machine
                         WHERE
                             status LIKE '%s'
-                        LIMIT %s) AS dt;""" %(status,
-                                              nblimit)
-        machines_jid_for_updating=[]
+                        LIMIT %s) AS dt;""" % (status,
+                                               nblimit)
+        machines_jid_for_updating = []
         borne = session.execute(sql)
 
         result = [x for x in borne][0]
@@ -7988,7 +7989,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
             resultquery = session.execute(sql)
 
             for record_updating_machine in resultquery:
-                machines_jid_for_updating.append( (record_updating_machine.jid, record_updating_machine.ars,))
+                machines_jid_for_updating.append((record_updating_machine.jid, record_updating_machine.ars))
 
             sql=""" delete
 
@@ -7997,8 +7998,8 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
                     WHERE
                         id >= %s and id <= %s and
                             status LIKE '%s';"""%(minid,
-                                                maxid,
-                                                status)
+                                                  maxid,
+                                                  status)
             resultquery = session.execute(sql)
 
             session.commit()

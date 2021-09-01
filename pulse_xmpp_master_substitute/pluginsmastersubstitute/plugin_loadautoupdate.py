@@ -65,37 +65,41 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
                                 objectxmpp.updatingmachine,
                                 repeat=True)
 
-def updatingmachine(self):
+def updatingmachine(objectxmpp):
     """
         This is used to monitor the machines that needs to be updated 
+        Args:
+            objectxmpp (MUC) : a reference to the main xmpp object
     """
     try:
-        descriptoragent = self.Update_Remote_Agentlist.get_md5_descriptor_agent()
+        descriptoragent = objectxmpp.Update_Remote_Agentlist.get_md5_descriptor_agent()
         datasend = {"action": "updateagent",
                     "data": {'subaction': 'descriptor',
                              'descriptoragent': descriptoragent},
                     "ret": 0,
                     "sessionid": getRandomName(5, "updateagent")}
-        machines_to_update = XmppMasterDatabase().getUpdate_machine(status = "updating",
-                                                      nblimit=objectxmpp.modeupdatingnbmachine)
+        machines_to_update = XmppMasterDatabase().getUpdate_machine(status="ready",
+                                                                    nblimit=objectxmpp.modeupdatingnbmachine)
         logger.debug("machines_to_update = %s" % machines_to_update)
         for machine in machines_to_update:
-            if self.autoupdatebyrelay:
+            if objectxmpp.autoupdatebyrelay:
                 datasend['data']['ars_update'] = machine[1]
-            self.send_message(machine[0],
+            objectxmpp.send_message(machine[0],
                       mbody=json.dumps(datasend),
                       mtype='chat')
     except Exception as e:
         logger.error("\n%s"%(traceback.format_exc()))
 
-def loadfingerprint(self):
+def loadfingerprint(objectxmpp):
     """
         Runs the load fingerprint
+        Args:
+            objectxmpp (MUC) : a reference to the main xmpp object
     """
-    self.Update_Remote_Agentlist = Update_Remote_Agent(self.diragentbase,
-                                                       self.autoupdate)
+    objectxmpp.Update_Remote_Agentlist = Update_Remote_Agent(objectxmpp.diragentbase,
+                                                       objectxmpp.autoupdate)
     logger.debug("load fingerprint: %s"%\
-        self.Update_Remote_Agentlist.get_fingerprint_agent_base())
+        objectxmpp.Update_Remote_Agentlist.get_fingerprint_agent_base())
 
 def read_conf_remote_update(objectxmpp):
     namefichierconf = plugin['NAME'] + ".ini"
@@ -164,14 +168,23 @@ def read_conf_remote_update(objectxmpp):
         else:
             objectxmpp.modeupdatingnbmachine = 100
 
-    logger.debug("directory base agent is %s"%objectxmpp.diragentbase)
-    logger.debug("autoupdate agent is %s"%objectxmpp.autoupdate)
+    logger.debug("directory base agent is %s" % objectxmpp.diragentbase)
+    if objectxmpp.autoupdate is True:
+        logger.debug("Autoupdate is enabled")
+    else:
+        logger.debug("Autoupdate is disabled")
+    logger.debug("autoupdate agent is %s" % objectxmpp.autoupdate)
     logger.debug("generate baseagent "\
-        "fingerprint interval agent is %s"%objectxmpp.generate_baseagent_fingerprint_interval)
-    logger.debug("mode updating is %s"%objectxmpp.modeupdating)
+        "fingerprint interval agent is %s" % objectxmpp.generate_baseagent_fingerprint_interval)
+    logger.debug("mode updating is %s" % objectxmpp.modeupdating)
     if objectxmpp.modeupdating != "auto":
-        logger.debug("mode updating frequence is %s"%objectxmpp.modeupdatingfrequence)
-        logger.debug("mode updating nombre machine is %s"%objectxmpp.modeupdatingnbmachine)
+        logger.debug("The check for updates will be proceed every %s seconds" % objectxmpp.modeupdatingfrequence)
+    if objectxmpp.modeupdatingnbmachine == 0:
+        logger.debug("0 computers will be updated (by configuration)")
+    elif objectxmpp.modeupdatingnbmachine == 1:
+        logger.debug("Updates will be done one by one (by configuration)")
+    else:
+        logger.debug("We will update %s machines at the same time" % objectxmpp.modeupdatingnbmachine)
     objectxmpp.senddescriptormd5 = types.MethodType(senddescriptormd5, objectxmpp)
     objectxmpp.plugin_loadautoupdate = types.MethodType(plugin_loadautoupdate, objectxmpp)
     objectxmpp.updatingmachine = types.MethodType(updatingmachine, objectxmpp)
@@ -201,13 +214,13 @@ def senddescriptormd5(self, to):
 
 def plugin_loadautoupdate(self, msg, data):
     try:
-        msgfrom=str(jid.JID(msg['from']).bare)
-        msgmachine=str(jid.JID(msg['from']).user)
+        msgfrom = str(jid.JID(msg['from']).bare)
+        msgmachine = str(jid.JID(msg['from']).user)
         if self.autoupdate and \
             all([x in  data.keys() for x in ['information',
-                                            'deployment',
-                                            'md5agent',
-                                            'agenttype']]) and \
+                                             'deployment',
+                                             'md5agent',
+                                             'agenttype']]) and \
             self.Update_Remote_Agentlist.get_fingerprint_agent_base() != data['md5agent'] and \
             data['md5agent'].upper() not in ["DEV", "DEBUG" ]:
             # update agent to do
@@ -217,13 +230,13 @@ def plugin_loadautoupdate(self, msg, data):
                 self.senddescriptormd5(msgfrom)
             else:
                 # verify key exist
-                XmppMasterDatabase().setUpdate_machine( data['information']['dnshostname'],
-                                                        msgfrom,
-                                                        ars = data['deployment'],
-                                                        status = "ready",
-                                                        descriptor=data['agenttype'],
-                                                        md5=data['md5agent'])
+                XmppMasterDatabase().setUpdate_machine(data['information']['info']['hostname'],
+                                                       msgfrom,
+                                                       ars=data['deployment'],
+                                                       status="ready",
+                                                       descriptor=data['agenttype'],
+                                                       md5=data['md5agent'])
         else:
-            logger.debug("aucune mise a jour for machine %s " % msgmachine)
+            logger.debug("%s already has the latest version of the agent. Nothing to do." % msgmachine)
     except Exception as e:
-        logger.error("\n%s"%(traceback.format_exc()))
+        logger.error("\n%s" % (traceback.format_exc()))

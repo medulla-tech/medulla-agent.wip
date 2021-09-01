@@ -81,27 +81,27 @@ def scheduledeploy(self):
     # If 1 package is in pending state, then the limit rate is removed.
     ###########################################################################
     
-    nb_machine_select_for_deploy_cycle=0
+    nb_machine_select_for_deploy_cycle = 0
     datetimenow = datetime.datetime.now()
-    startfunc=time.time()
+    startfunc = time.time()
     if not self.process_load_deployment_on:
-        logger.warning("lock new cycle deploy : process precedent no terminate")
+        logger.warning("We cannot start a new deployment cyle. The previous one is still running.")
         return
     else:
-        logger.debug("start cycle deploy[%s mach./%s secondes]"%(self.deployment_nbr_mach_cycle,
-                                                                 self.deployment_scan_interval))
+        logger.debug("We start a new deployment cycle of %s computers. Next check in %s seconds" % (self.deployment_nbr_mach_cycle,
+                                                                                                    self.deployment_scan_interval))
     try:
         self.process_load_deployment_on = False
-        msg=[]
+        msg = []
         try:
             self.mycompteurcallplugin+=1
             if not self.mycompteurcallplugin % 6:
-                list_ars_syncthing_pause =  XmppMasterDatabase().get_ars_for_pausing_syncthing(2)
+                list_ars_syncthing_pause = XmppMasterDatabase().get_ars_for_pausing_syncthing()
                 for arssyncthing in list_ars_syncthing_pause:
                     datasend = {"action": "deploysyncthing",
                                 "sessionid": name_random(5, "pausesyncthing"),
                                 "data": {"subaction": "pausefolder",
-                                        "folder": arssyncthing[2]}
+                                         "folder": arssyncthing[2]}
                                 }
                     listars = arssyncthing[1].split(",")
                     for arssyncthing in listars:
@@ -115,29 +115,30 @@ def scheduledeploy(self):
                         datasend = {"action": "deploysyncthing",
                                     "sessionid": name_random(5, "cleansyncthing"),
                                     "data": {"subaction": "cleandeploy",
-                                            "iddeploy": deploydata['directory_tmp'],
-                                            "jidmachines": deploydata['jidmachines'],
-                                            "jidrelays": deploydata['jidrelays']}}
+                                             "iddeploy": deploydata['directory_tmp'],
+                                             "jidmachines": deploydata['jidmachines'],
+                                             "jidrelays": deploydata['jidrelays']}}
                         for relay in ars:
                             self.send_message(mto=relay['jid'],
                                             mbody=json.dumps(datasend),
                                             mtype='chat')
                         XmppMasterDatabase().refresh_syncthing_deploy_clean(deploydata['id'])
         except AttributeError:
-            self.mycompteurcallplugin=0
+            self.mycompteurcallplugin = 0
         except Exception:
-            logger.error("%s" % (traceback.format_exc()))
+            logger.error("We hit the backtrace: \n %s" % (traceback.format_exc()))
         listobjsupp = []
         try:
-            # Search deploy to running
-            nb_machine_select_for_deploy_cycle, resultdeploymachine = MscDatabase().deployxmpp(limitnbr=100)
-        except Exception:
-            logger.error("%s" % (traceback.format_exc()))
+            # Searching for deployements to start
+            nb_machine_select_for_deploy_cycle, resultdeploymachine = MscDatabase().deployxmpp(limitnbr=self.deployment_nbr_mach_cycle)
+        except Exception as error_while_deploy:
+            logger.error("We encountered the following error while trying to deploy: \n %s" % error_while_deploy)
+            logger.error("We hit the backtrace: \n %s" % (traceback.format_exc()))
 
         if nb_machine_select_for_deploy_cycle == 0:
             return
 
-        uuidlist=[]
+        uuidlist = []
         for deployobject in resultdeploymachine:
             uuidlist.append(deployobject['UUID'])
         resultpresence = XmppMasterDatabase().getPresenceExistuuids(uuidlist)
@@ -147,20 +148,21 @@ def scheduledeploy(self):
             # creation deployment
             UUID = deployobject['UUID']
             UUIDSTR = UUID.replace('UUID', "")
-            #resultpresence = XmppMasterDatabase().getPresenceExistuuids(UUID)
             re_search = []
+            hostname = deployobject['name'].split(".", 1)[0]
+
             if resultpresence[UUID][1] == 0:
-                ## il n'y a pas de uuid glpi
-                re_search = XmppMasterDatabase().getMachinedeployexistonHostname(deployobject['name'])
-                if self.Recover_GLPI_Identifier_from_name and len(re_search) == 1:
+                # There is no GLPI UUID
+                re_search = XmppMasterDatabase().getMachinedeployexistonHostname(hostname)
+                if self.recover_glpi_identifier_from_name and len(re_search) == 1:
                     update_result = XmppMasterDatabase().update_uuid_inventory(re_search[0]['id'], UUID)
                     if update_result is not None:
                         if update_result.rowcount > 0:
-                            logger.info("update uuid inventory %s for machine %s" % (UUID, deployobject['name']))
+                            logger.info("update uuid inventory %s for machine %s" % (UUID, hostname))
                     resultpresence[UUID][1] = 1
                     reloadresultpresence_uuid = XmppMasterDatabase().getPresenceExistuuids(UUID)
-                    resultpresence[UUID]=reloadresultpresence_uuid[UUID]
-                    self.xmpplog("Attaching GLPI identifier [%s] in xmppmaster machine [%s]" % (UUID, deployobject['name']),
+                    resultpresence[UUID] = reloadresultpresence_uuid[UUID]
+                    self.xmpplog("Attaching GLPI identifier [%s] in xmppmaster machine [%s]" % (UUID, hostname),
                                 type='deploy',
                                 sessionname="no_session",
                                 priority=-1,
@@ -170,7 +172,7 @@ def scheduledeploy(self):
                                 date=None,
                                 fromuser=deployobject['login'])
 
-            if resultpresence[UUID][1] == 0:#verify si reinitialiser presence
+            if resultpresence[UUID][1] == 0:
                 if re_search:
                     msg.append( "<span class='log_err'>Consolidation GLPI XMPP ERROR for machine %s. " \
                                 "Deployment impossible : GLPI ID is %s</span>" % (deployobject['name'],
@@ -1255,10 +1257,14 @@ def read_conf_loaddeployment(objectxmpp):
         objectxmpp.deployment_nbr_mach_cycle = 100
         objectxmpp.wol_interval = 60
         objectxmpp.session_check_interval = 15
-        objectxmpp.Recover_GLPI_Identifier_from_name = False
+        objectxmpp.recover_glpi_identifier_from_name = False
     else:
         Config = ConfigParser.ConfigParser()
         Config.read(pathfileconf)
+
+        if os.path.exists(pathfileconf + ".local"):
+            Config.read(pathfileconf + ".local")
+
         if Config.has_option("parameters", "wol_interval"):
             objectxmpp.wol_interval =  Config.getint('parameters', 'wol_interval')
         else:
@@ -1284,10 +1290,10 @@ def read_conf_loaddeployment(objectxmpp):
         else:
             objectxmpp.session_check_interval = 15
 
-        if Config.has_option("parameters", "Recover_GLPI_Identifier_from_name"):
-            objectxmpp.Recover_GLPI_Identifier_from_name =  Config.getboolean('parameters', 'Recover_GLPI_Identifier_from_name')
+        if Config.has_option("parameters", "recover_glpi_identifier_from_name"):
+            objectxmpp.recover_glpi_identifier_from_name =  Config.getboolean('parameters', 'recover_glpi_identifier_from_name')
         else:
-            objectxmpp.Recover_GLPI_Identifier_from_name = False
+            objectxmpp.recover_glpi_identifier_from_name = False
 
     # initialisation des object for deployement
 
