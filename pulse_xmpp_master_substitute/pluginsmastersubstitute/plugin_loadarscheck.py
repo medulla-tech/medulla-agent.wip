@@ -38,10 +38,11 @@ import re
 from sleekxmpp import jid
 from sleekxmpp.exceptions import IqError, IqTimeout
 from lib.plugins.xmpp import XmppMasterDatabase
+import json
 
 logger = logging.getLogger()
 
-plugin = {"VERSION": "1.2", "NAME": "loadarscheck", "TYPE": "substitute"}
+plugin = {"VERSION": "1.21", "NAME": "loadarscheck", "TYPE": "substitute"}
 
 def action(objectxmpp, action, sessionid, data, msg, ret):
     """
@@ -55,11 +56,11 @@ def action(objectxmpp, action, sessionid, data, msg, ret):
 
         if compteurcallplugin == 0:
             read_conf_loadarscheck(objectxmpp)
+
+
     except Exception as e:
         logger.error("Plugin loadarscheck, we encountered the error %s" % str(e))
         logger.error("We obtained the backtrace %s" % traceback.format_exc())
-
-
 
 def arscheck(self):
     """
@@ -68,47 +69,61 @@ def arscheck(self):
         check_ars_by_ping
     """
     sessionid = name_random(5, "monitoring_check_ars")
-
+    logger.debug("monitoring_message_on_machine_no_presence %s"%self.monitoring_message_on_machine_no_presence)
     if not self.ressource_scan_available:
         logger.debug("The ressource is not available.")
         return
+
+
+
+    listaction = []
+    listaction1 = []
     try:
         self.ressource_scan_available = False
-
         list_ars_search = XmppMasterDatabase().getRelayServer()
         enabled_ars = [x for x in list_ars_search if x['enabled']]
         disabled_ars = [x for x in list_ars_search if not x['enabled']]
-        logger.debug("disable %s" % len(disabled_ars))
-        logger.debug("enable %s" % len(enabled_ars))
+        enabled_arsjid = [x['jid'] for x in list_ars_search if x['enabled']]
+        disabled_arsjid = [x['jid'] for x in list_ars_search if not x['enabled']]
+
+        appearance_ars = [ x for x in enabled_arsjid if x not in self.enabled_ars_oldjid]
+        disappearance_ars = [x for x in self.enabled_ars_oldjid  if x not in enabled_arsjid ]
+
+        logger.debug("disappearance ars %s" %disappearance_ars)
+        logger.debug("appearance ars %s" % appearance_ars)
+        logger.debug("self.monitor_agent %s" % self.monitor_agent)
 
         self.ars_server_list_status = []
-        listaction=[]
-        for ars in enabled_ars:
-            arsstatus = self.ping_ejabberd_and_relay(ars['jid'])
-            # logger.debug("ARS DATA present %s" % ars['jid'])
-            # logger.info("presence %s" % self.ping_ejabberd_and_relay(arsstatus)
-            self.ars_server_list_status.append(arsstatus)
-            if arsstatus['server']['presense'] == 0 or \
-                    arsstatus['ars']['presense'] == 0:
-                listaction.append(ars['jid'])
 
-        if logger.level == 10 and self.ars_server_list_status :
+        logger.debug("old disable %s" %self.disabled_ars_oldjid )
+        logger.debug("old enable %s" %  self.enabled_ars_oldjid )
+
+        for ars in self.enabled_ars_oldjid:
+            arsstatus = self.ping_ejabberd_and_relay(ars                )
+            logger.debug("\n%s\narsstatus %s %s\n\n" % (ars,arsstatus['server']['presence'],arsstatus['ars']['presence']))
+
+            self.ars_server_list_status.append(arsstatus)
+            if arsstatus['server']['presence'] == 0 or \
+                    arsstatus['ars']['presence'] == 0:
+                listaction.append(ars)
+
+
+
+        if logger.level == 10 and self.ars_server_list_status:
             self.display_server_status()
-            
+
         logger.debug("listaction %s" % listaction)
-        
-         # We give some time for the relay server, to be correctly/fully started
+
+        # We give some time for the relay server, to be correctly/fully started
         for jidaction in listaction:
             logger.error("jidaction %s" % jidaction)
             time.sleep(1)
             arsstatus = self.ping_ejabberd_and_relay(jidaction)
-            if arsstatus['server']['presense'] == 0 or \
-                arsstatus['ars']['presense'] == 0:
+            if arsstatus['server']['presence'] == 0 or \
+                arsstatus['ars']['presence'] == 0:
                 if self.update_table:
                     # Update relay and machine table.
-
                     XmppMasterDatabase().update_Presence_Relay(jidaction)
-
                     self.xmpplog("update on ping ars %s" % jidaction,
                                  type='Monitoring',
                                  sessionname=sessionid,
@@ -120,7 +135,7 @@ def arscheck(self):
                                  fromuser=jidaction)
                     if self.monitoring_message_on_machine_no_presence:
                         logger.debug("The Ars %s is down" % jidaction)
-                        self.message_datas_to_monitoring_loadarscheck (jidaction, "The Ars %s is down" % jidaction,
+                        self.message_datas_to_monitoring_loadarscheck (sessionid, jidaction, "The Ars %s is down" % jidaction,
                                                                        informationaction="ack")
                     if self.action_reconf_ars_machines:
                         # update machine for reconf
@@ -134,12 +149,14 @@ def arscheck(self):
                                      date=None,
                                      fromuser=jidaction)
                         XmppMasterDatabase().is_machine_reconf_needed(jidaction)
-
-        for ars in disabled_ars:
-            arsstatus = self.ping_ejabberd_and_relay(ars['jid'])
+        logger.debug("old disable %s" %self.disabled_ars_oldjid )
+        logger.debug("old enable %s" %  self.enabled_ars_oldjid )
+        for ars in self.disabled_ars_oldjid:
+            arsstatus = self.ping_ejabberd_and_relay(ars)
             if arsstatus['server']['presence'] == 1 and \
                     arsstatus['ars']['presence'] == 1:
-                self.xmpplog("The ARS %s is online" % ars['jid'],
+                listaction1.append(ars)
+                self.xmpplog("The ARS %s is online" % ars,
                              type='Monitoring',
                              sessionname=sessionid,
                              priority=-1,
@@ -147,27 +164,67 @@ def arscheck(self):
                              why=self.boundjid.bare,
                              module="Notify | Substitut | Monitoring",
                              date=None,
-                             fromuser=ars['jid'])
-                XmppMasterDatabase().update_Presence_Relay(ars['jid'], presence=1)
+                             fromuser=ars)
+                XmppMasterDatabase().update_Presence_Relay(ars, presence=1)
+
+        #self.enabled_ars_oldjid=[x for x in enabled_arsjid]
+        #self.disabled_ars_oldjid=[x for x in disabled_arsjid]
     except Exception as e:
         logger.error("We failed to check the ARS Status")
         logger.error("The backtrace of this error is \n %s" % traceback.format_exc())
     finally:
+        for ars_index in listaction:
+            self.enabled_ars_oldjid.remove(ars)
+            self.disabled_ars_oldjid.append(ars)
+        for ars_index in listaction1:
+            self.enabled_ars_oldjid.append(ars)
+            self.disabled_ars_oldjid.remove(ars)
         self.ressource_scan_available = True
 
-def message_datas_to_monitoring_loadarscheck (self, ars,  message, informationaction="ack"):
-    # status// "ready", "disable", "busy", "warning", "error"
-    logger.debug("message_datas_to_monitoring_loadarscheck( %s,%s) " %(message, informationaction))
-    sessionid = name_random(5, "monitoring_check_ars")
-    self.xmpplog(message,
-                type='Monitoring',
-                sessionname=sessionid,
-                priority=-1,
-                action="xmpplog",
-                why=self.boundjid.bare,
-                module="Notify | Substitut | Monitoring",
-                date=None,
-                fromuser=ars)
+def message_datas_to_monitoring_loadarscheck (self, sessionid, ars,  message, informationaction="ack"):
+    try:
+        # status// "ready", "disable", "busy", "warning", "error"
+        logger.debug("message monitoring to %s (%s, %s, %s) " %(self.monitor_agent,
+                                                                ars,
+                                                                message,
+                                                                informationaction))
+        #sessionid = name_random(5, "monitoring_check_ars")
+        self.xmpplog(message,
+                    type='Monitoring',
+                    sessionname=sessionid,
+                    priority=-1,
+                    action="xmpplog",
+                    why=self.boundjid.bare,
+                    module="Notify | Substitut | Monitoring",
+                    date=None,
+                    fromuser=ars)
+        msg = { "action": "vectormonitoringagent",
+                "sessionid": sessionid,
+                "base64": False,
+                "data":
+                    {
+                        "date": time.strftime('%Y-%m-%d %H:%M:%S'),
+                        "subaction": "terminalalert",
+                        "from": ars,
+                        "device_service": [
+                            {
+                            "alertMonitoring": {
+                            "status": "warning",
+                            "serial": "",
+                            "firmware": "",
+                            "metriques": {"informationaction": informationaction},
+                            "message": [message]
+                            }
+                        }
+                    ],
+                    "other_data": {}
+                    }
+            }
+        self.send_message(mto=str(self.monitor_agent.strip('\"')),
+                        mbody=json.dumps(msg, indent=4),
+                        mtype='chat')
+    except Exception:
+        logger.error("The backtrace of this error is \n %s" % traceback.format_exc())
 
 def ping_ejabberd_and_relay(self, jid_client):
     """
@@ -183,18 +240,6 @@ def ping_ejabberd_and_relay(self, jid_client):
            'ars': {'jid': name_ars_jid, 'presence': 1}}
     result = self.send_ping_relay(jid_client, self.check_timeout_ping)
 
-def ping_ejabberd_and_relay(self, jid_client):
-    """
-        Used to test both the relayserver and the ejabberd server
-        to determine which one is not functionnal.
-        Args:
-            jid_client: jid of the relay
-    """
-    jidserveur = str(jid.JID(jid_client).domain)
-    jidnamears = str(jid.JID(jid_client).user)
-    rep= { 'server' : { 'jid' : jidserveur, 'presense' : 1},
-           'ars' : { 'jid' : jidnamears, 'presense' : 1}}
-    result = self.send_ping_relay(jid_client, self.check_timeout_ping)
     if result == 1:
         pass
     elif result == -1:
@@ -211,7 +256,9 @@ def ping_ejabberd_and_relay(self, jid_client):
         else:
             rep['server']['presence'] = 0
 
-def send_ping_relay(self, jid,  timeout=5):
+    return rep
+
+def send_ping_relay(self, jid, timeout=5):
     """
         Send ping to the relay using the XEP 0199.
         ref: https://xmpp.org/extensions/xep-0199.html
@@ -253,29 +300,41 @@ def read_conf_loadarscheck(objectxmpp):
         Args:
             objectxmpp: Permit to acces to all xmpp mecanism.
     """
+
+
+    list_ars_search = XmppMasterDatabase().getRelayServer()
+    objectxmpp.enabled_ars_oldjid   = [x['jid'] for x in list_ars_search if x['enabled']]
+    objectxmpp.disabled_ars_oldjid  = [x['jid'] for x in list_ars_search if not x['enabled']]
+
+
+
     logger.debug("Initialisation plugin : %s " % plugin["NAME"])
     namefichierconf = plugin['NAME'] + ".ini"
     # objectxmpp.ars_server_list_status = []
     # for _ in range(15): logger.info("read_conf_loadarscheck")
 
-    pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf )
+    pathfileconf = os.path.join(objectxmpp.config.pathdirconffile, namefichierconf)
     objectxmpp.ressource_scan_available = True
     objectxmpp.ars_server_list_status = []
 
     if not os.path.isfile(pathfileconf):
         # not config files
-        objectxmpp.check_ars_scan_interval = 120
+        objectxmpp.check_ars_scan_interval = 600
         objectxmpp.check_timeout_ping = 5
         objectxmpp.update_table = True
         objectxmpp.action_reconf_ars_machines = True
-        objectxmpp.monitoring_message_on_machine_no_presence = False
+        objectxmpp.monitoring_message_on_machine_no_presence = True
         objectxmpp.monitor_agent="master_mon@pulse"
     else:
         ars_config = ConfigParser.ConfigParser()
         ars_config.read(pathfileconf)
+
+        if os.path.exists(pathfileconf + ".local"):
+            ars_config.read(pathfileconf + ".local")
+
         if ars_config.has_option("parameters", "check_ars_scan_interval"):
-            objectxmpp.check_ars_scan_interval =  ars_config.getint('parameters',
-                                                                    'check_ars_scan_interval')
+            objectxmpp.check_ars_scan_interval = ars_config.getint('parameters',
+                                                                   'check_ars_scan_interval')
         else:
             # default values parameters
             objectxmpp.check_ars_scan_interval = 30
@@ -332,56 +391,16 @@ def read_conf_loadarscheck(objectxmpp):
     # declaration function message_datas_to_monitoring_loadarscheck in object xmpp
     objectxmpp.message_datas_to_monitoring_loadarscheck = types.MethodType(message_datas_to_monitoring_loadarscheck, objectxmpp)
 
-        if ars_config.has_option("parameters", "update_table"):
-            objectxmpp.update_table =  ars_config.getboolean('parameters',
-                                                             'update_table')
-        else:
-            # default values parameters
-            objectxmpp.update_table = True
-
-        if ars_config.has_option("parameters", "action_reconf_ars_machines"):
-            objectxmpp.action_reconf_ars_machines =  ars_config.getboolean('parameters',
-                                                                           'action_reconf_ars_machines')
-        else:
-            # default values parameters
-            objectxmpp.action_reconf_ars_machines = False
-
-        if ars_config.has_option("parameters", "monitoring_message_on_machine_no_presense"):
-            objectxmpp.monitoring_message_on_machine_no_presense =  ars_config.getboolean('parameters',
-                                                                                          'monitoring_message_on_machine_no_presense')
-        else:
-            # default values parameters
-            objectxmpp.monitoring_message_on_machine_no_presense = False
-
-        if ars_config.has_option("parameters", "monitor_agent"):
-            objectxmpp.monitor_agent =  ars_config.get('parameters', 'monitor_agent')
-        else:
-            # default values parameters
-            objectxmpp.monitor_agent = "master_mon@pulse"
-
-    logger.info("parameter loadarscheck : check_ars_scan_interval = %s" % objectxmpp.check_ars_scan_interval)
-    logger.info("parameter loadarscheck : check_timeout_ping = %s" % objectxmpp.check_timeout_ping)
-    logger.info("parameter loadarscheck : update_table = %s" % objectxmpp.update_table)
-    if objectxmpp.update_table:
-        logger.info("parameter loadarscheck : action_reconf_ars_machines = %s" % objectxmpp.action_reconf_ars_machines)
-        logger.info("parameter monitoring_message_on_machine_no_presense : "\
-                    "   monitoring_message_on_machine_no_presense = %s" % objectxmpp.check_ars_scan_interval)
-        logger.info("parameter loadarscheck : monitor_agent = %s" % objectxmpp.monitor_agent)
-    logger.info("lock ressource_scan_available = %s" % objectxmpp.ressource_scan_available)
-
-    ## declaration function message_datas_to_monitoring_loadarscheck in object xmpp
-    objectxmpp.message_datas_to_monitoring_loadarscheck = types.MethodType(message_datas_to_monitoring_loadarscheck, objectxmpp)
-
-    ## declaration function ping_ejabberd_and_relay in object xmpp
+    # declaration function ping_ejabberd_and_relay in object xmpp
     objectxmpp.ping_ejabberd_and_relay = types.MethodType(ping_ejabberd_and_relay, objectxmpp)
 
-    ## declaration function send_ping_relay in object xmpp
+    # declaration function send_ping_relay in object xmpp
     objectxmpp.send_ping_relay = types.MethodType(send_ping_relay, objectxmpp)
 
     # declaration function arscheck in object xmpp
     objectxmpp.arscheck = types.MethodType(arscheck, objectxmpp)
 
-    ## declaration function display_server_status in object xmpp
+    # declaration function display_server_status in object xmpp
     objectxmpp.display_server_status = types.MethodType(display_server_status, objectxmpp)
 
     # schedule function arscheck
