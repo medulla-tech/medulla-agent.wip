@@ -6736,7 +6736,9 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error(str(e))
             return statdict
 
-
+    #################################
+    ###### FUNCTION MONITORING ######
+    #################################
     @DatabaseHelper._sessionm
     def setMonitoring_machine(self,
                               session,
@@ -7554,6 +7556,47 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
         except Exception as e:
             logging.getLogger().error(str(e))
             return -1
+    
+    def __binding_application_check(self, datastring, bindingstring, device_type):
+        resultbinding = None
+        try:
+            logging.getLogger().debug("data for binding is %s" % datastring)
+            data=json.loads(datastring)
+        except Exception as e:
+            msg =  "[binding error device rule %s] : data from message" \
+                " monitoring format json error %s" % (device_type, str(e))
+            logging.getLogger().error("%s" % msg)
+            return (msg, -1)
+
+        try:
+            logging.getLogger().debug("compile")
+            code = compile(bindingstring, '<string>', 'exec')
+            exec(code)
+        except KeyError as e:
+            msg = "[binding error device rule %s] : key %s in "\
+                "binding:\n%s\nis missing. Check your binding on data\n%s" % (
+                    device_type,
+                    str(e),
+                    bindingstring,
+                    json.dumps(data,indent=4))
+            logging.getLogger().error("%s" % msg)
+            return (msg, -1)
+        except Exception as e:
+            msg = "[binding device rule %s error %s] in binding:\n%s\ "\
+                "on data\n%s"%(device_type,
+                               str(e),
+                               bindingstring,
+                               json.dumps(data,indent=4))
+            logging.getLogger().error("%s" % msg)
+            return (msg, -1)
+        msg = "[ %s : result binding %s for binding:\n%s\ "\
+                "on data\n%s"%(device_type,
+                               resultbinding,
+                               bindingstring,
+                               json.dumps(data,indent=4))
+        logging.getLogger().debug("%s" % msg)
+        return (msg, resultbinding)
+    
 
 
     def __binding_application(self, datastring, bindingstring, device_type):
@@ -7732,7 +7775,9 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
         except Exception, e:
             logging.getLogger().error(str(e))
         return list_panels_template
-
+    #################################
+    ###### FUNCTION MONITORING ######
+    #################################
     @DatabaseHelper._sessionm
     def get_ars_group_in_list_clusterid(self,
                                         session,
