@@ -1178,39 +1178,52 @@ class XmppMasterDatabase(DatabaseHelper):
                     self.create_Glpi_register_keys( idmachine,
                                                     regwindokey,
                                                     value=glpiinformation['data']['reg'][regwindokey][0])
-        updatedb=-1
+        return self.updateGLPI_information_machine( idmachine,
+                                                    "UUID%s" % glpiinformation['data']['uuidglpicomputer'][0],
+                                                    glpiinformation['data']['description'][0],
+                                                    glpiinformation['data']['owner_firstname'][0],
+                                                    glpiinformation['data']['owner_realname'][0],
+                                                    glpiinformation['data']['owner'][0],
+                                                    glpiinformation['data']['model'][0],
+                                                    glpiinformation['data']['manufacturer'][0],
+                                                    entity_id_xmpp,
+                                                    location_id_xmpp)
+
+    @DatabaseHelper._sessionm
+    def updateGLPI_information_machine(self,
+                                       session,
+                                       id,
+                                       uuid_inventory,
+                                       description_machine,
+                                       owner_firstname,
+                                       owner_realname,
+                                       owner,
+                                       model,
+                                       manufacturer,
+                                       entity_id_xmpp,
+                                       location_id_xmpp):
+        """
+            update table Machine avec information glaner from GLPI
+        """
         try:
-            sql = '''
-                UPDATE `machines`
-                SET
-                    `uuid_inventorymachine` = '%s',
-                    `glpi_description`  = '%s',
-                    `glpi_owner_firstname` = '%s',
-                    `glpi_owner_realname` = '%s',
-                    `glpi_owner` = '%s',
-                    `model` = '%s',
-                    `manufacturer` = '%s',
-                    `glpi_entity_id` = %s,
-                    `glpi_location_id` = %s
-                WHERE
-                    `id` = '%s';''' % ("UUID%s" % glpiinformation['data']['uuidglpicomputer'][0],
-                                    re.escape(glpiinformation['data']['description'][0]),
-                                    glpiinformation['data']['owner_firstname'][0],
-                                    glpiinformation['data']['owner_realname'][0],
-                                    glpiinformation['data']['owner'][0],
-                                    glpiinformation['data']['model'][0],
-                                    glpiinformation['data']['manufacturer'][0],
-                                    entity_id_xmpp,
-                                    location_id_xmpp,
-                                    idmachine)
-            #logging.getLogger().debug("sql %s" % sql)
-            updatedb = session.execute(sql)
-            # update entity information
+            entity_id_xmpp = None if entity_id_xmpp in ["NULL", ""] else entity_id_xmpp
+            location_id_xmpp = None if location_id_xmpp in ["NULL",""] else location_id_xmpp
+            obj = { Machines.uuid_inventorymachine : uuid_inventory ,
+                              Machines.glpi_description : description_machine,
+                              Machines.glpi_owner_firstname : owner_firstname,
+                              Machines.glpi_owner_realname : owner_realname,
+                              Machines.glpi_owner : owner,
+                              Machines.model : model,
+                              Machines.manufacturer : manufacturer,
+                              Machines.glpi_entity_id :  entity_id_xmpp,
+                              Machines.glpi_location_id :location_id_xmpp }
+            session.query(Machines).filter( Machines.id == id).update( obj)
             session.commit()
             session.flush()
+            return 1
         except Exception, e:
-            logging.getLogger().error(str(e))
-        return updatedb
+            logging.getLogger().debug("updateMachines error %s->" % str(e))
+            return -1
 
     @DatabaseHelper._sessionm
     def updateName_Qa_custom_command(self,
@@ -7556,7 +7569,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
         except Exception as e:
             logging.getLogger().error(str(e))
             return -1
-    
+
     def __binding_application_check(self, datastring, bindingstring, device_type):
         resultbinding = None
         try:
@@ -7596,7 +7609,7 @@ mon_rules_no_success_binding_cmd = @mon_rules_no_success_binding_cmd@ -->
                                json.dumps(data,indent=4))
         logging.getLogger().debug("%s" % msg)
         return (msg, resultbinding)
-    
+
 
 
     def __binding_application(self, datastring, bindingstring, device_type):
