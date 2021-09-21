@@ -511,6 +511,23 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error(str(e))
 
     @DatabaseHelper._sessionm
+    def changStatusPresenceMachine(self, session, jid, enable = '0'):
+        """
+            update presence machine in table machine.
+        """
+        try:
+            user = "%s%%"%str(jid).split("@")[0]
+            machine = session.query(Machines).filter( Machines.jid.like(user)).first()
+            if machine:
+                machine.enabled = "%s"%enable
+                session.commit()
+                session.flush()
+            else:
+                logger.warning("xmpp signal changement status on machine no exist %s" % jid)
+        except Exception:
+            logger.warning("xmpp signal changement status on machine no exist %s" % jid)
+
+    @DatabaseHelper._sessionm
     def updatedeploytosyncthing(self, session, sessionid, syncthing=1):
         try:
             sql = """UPDATE `xmppmaster`.`deploy`
