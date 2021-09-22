@@ -54,6 +54,8 @@ class statcallplugin:
             self.param["count_%s_in_time"%self.name]+=1
             self.param["count_%s_up_time"%self.name]+=1
             if timeseconde > self.param["time_between_checks_%s"%self.name]:
+                logger.debug("--------------------------- STATS %s ---------------------------" % (
+                                                                                             self.obj.boundjid.bare) )
                 logger.debug("The plugin %s has called by %s "\
                          "%s times in %s seconds (rate = %s)"%(self.name,
                                                                 self.obj.boundjid.bare,
@@ -64,6 +66,7 @@ class statcallplugin:
                                                                 self.param["count_%s_up_time"%self.name],
                                                                 timesecondeall,
                                                                 self.param["count_%s_up_time"%self.name]/timesecondeall))
+                logger.debug("-----------------------------------------------------------------")
                 self.param["old_time_%s"%self.name] = currenttime
                 self.param["count_%s_in_time"%self.name]=0
         except Exception as e:
