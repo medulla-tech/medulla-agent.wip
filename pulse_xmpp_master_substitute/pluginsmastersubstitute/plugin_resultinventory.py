@@ -30,10 +30,18 @@ import json
 import logging
 from lib.plugins.xmpp import XmppMasterDatabase
 from lib.plugins.glpi import Glpi
+import os
+from lib.utils import file_put_contents
+import ConfigParser
+try:
+    from lib.stat import statcallplugin
+    statfuncton = True
+except:
+    statfuncton = False
 
 logger = logging.getLogger()
 
-plugin = {"VERSION": "1.12", "NAME": "resultinventory", "TYPE": "substitute"}
+plugin = {"VERSION": "1.13", "NAME": "resultinventory", "TYPE": "substitute"}
 
 
 def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
@@ -45,6 +53,20 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
         logger.debug("=====================================================")
         logger.debug("call %s from %s"%(plugin,msg['from']))
         logger.debug("=====================================================")
+
+        try:
+            compteurcallplugin = getattr(xmppobject, "num_call%s" % action)
+            if compteurcallplugin == 0:
+                if statfuncton:
+                    xmppobject.stat_inventory_agent = statcallplugin(xmppobject,
+                                                                    plugin['NAME'])
+                read_conf_inventory_plugin(xmppobject)
+            else:
+                if statfuncton:
+                    xmppobject.stat_inventory_agent.statutility()
+        except Exception as e:
+            logger.error("\n%s" % (traceback.format_exc()))
+
         logger.info("Received inventory from %s in inventory substitute agent" % (msg['from']))
         try:
             url = xmppobject.config.inventory_url
@@ -236,3 +258,38 @@ def XmppUpdateInventoried(jid, machine):
     except Exception:
         logger.error("** Update error on inventory %s\n%s" % (jid, traceback.format_exc()))
     return -1
+
+def read_conf_inventory_plugin(xmppobject):
+    """
+        lit la configuration du plugin
+        le repertoire ou doit se trouver le fichier de configuration est dans la variable xmppobject.config.pathdirconffile
+    """
+
+    namefichierconf = plugin['NAME'] + ".ini"
+    xmppobject.pathfileconf = os.path.join( xmppobject.config.pathdirconffile, namefichierconf)
+    if not os.path.isfile(xmppobject.pathfileconf):
+        logger.error("plugin %s\nConfiguration file  missing\n  %s" % (plugin['NAME'],
+                                                                       xmppobject.pathfileconf))
+        dataconfigfile ="[parameters]\ntime_between_checks =  60\n"
+        file_put_contents(xmppobject.pathfileconf, dataconfigfile)
+        if statfuncton:
+            xmppobject.stat_inventory_agent.display_param_config( msg="DEFAULT")
+        return False
+    else:
+        Config = ConfigParser.ConfigParser()
+        Config.read(xmppobject.pathfileconf)
+        if os.path.exists(xmppobject.pathfileconf + ".local"):
+            Config.read(xmppobject.pathfileconf + ".local")
+        if Config.has_section("parameters"):
+
+            if statfuncton:
+                xmppobject.stat_inventory_agent.load_param_lap_time_stat_(Config)
+                xmppobject.stat_inventory_agent.display_param_config("CONFIG")
+        else:
+            logger.error("see SECTION [parameters] mising in file : %s " % xmppobject.pathfileconf)
+            xmppobject.assessor_agent_errorconf = True
+            if statfuncton:
+                xmppobject.stat_inventory_agent.display_param_config("DEFAULT")
+            return False
+
+    return True
