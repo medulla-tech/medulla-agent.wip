@@ -54,32 +54,32 @@ class statcallplugin:
             self.param["count_%s_in_time"%self.name]+=1
             self.param["count_%s_up_time"%self.name]+=1
             if timeseconde > self.param["time_between_checks_%s"%self.name]:
-                logger.debug("--------------------------- STATS %s ---------------------------" % (
+                logger.info("--------------------------- STATS %s ---------------------------" % (
                                                                                              self.obj.boundjid.bare) )
-                logger.debug("The plugin %s has called by %s "\
+                logger.info("The plugin %s has called by %s "\
                          "%s times in %s seconds (rate = %s)"%(self.name,
                                                                 self.obj.boundjid.bare,
                                                                 self.param["count_%s_in_time"%self.name],
                                                                 timeseconde,
                                                                 self.param["count_%s_in_time"%self.name]/timeseconde))
-                logger.debug("uptime call : %s times in %s seconds (rate = %s)"%(
+                logger.info("uptime call : %s times in %s seconds (rate = %s)"%(
                                                                 self.param["count_%s_up_time"%self.name],
                                                                 timesecondeall,
                                                                 self.param["count_%s_up_time"%self.name]/timesecondeall))
-                logger.debug("-----------------------------------------------------------------")
+                logger.info("-----------------------------------------------------------------")
                 self.param["old_time_%s"%self.name] = currenttime
                 self.param["count_%s_in_time"%self.name]=0
         except Exception as e:
             logger.error("\n%s" % (traceback.format_exc()))
 
     def display_param_config(self, msg=""):
-        logger.debug("--------------------- PARAM %s STATS %s ---------------------------" % (msg,
+        logger.info("--------------------- PARAM %s STATS %s ---------------------------" % (msg,
                                                                                              self.obj.boundjid.bare) )
-        logger.debug("Parametter stat call plugin %s" % (self.name))
-        logger.debug("Parametter time_between_checks =  %s" % (self.param["time_between_checks_%s"%self.name]))
+        logger.info("Parametter stat call plugin %s" % (self.name))
+        logger.info("Parametter time_between_checks =  %s" % (self.param["time_between_checks_%s"%self.name]))
         timestamp = datetime.datetime.fromtimestamp(self.param["star_time_%s"%self.name])
-        logger.debug("first call to %s" % timestamp.strftime('%Y-%m-%d %H:%M:%S'))
-        logger.debug("--------------------- PARAM STATS ---------------------------")
+        logger.info("first call to %s" % timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        logger.info("--------------------- PARAM STATS ---------------------------")
 
     def load_param_lap_time_stat_(self, Config):
         if Config.has_option("parameters", "time_between_checks"):
