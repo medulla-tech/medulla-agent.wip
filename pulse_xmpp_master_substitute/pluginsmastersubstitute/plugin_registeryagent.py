@@ -36,7 +36,11 @@ from lib.utils import getRandomName
 import re
 from distutils.version import LooseVersion
 import ConfigParser
-
+try:
+    from lib.stat import statcallplugin
+    statfuncton = True
+except:
+    statfuncton = False
 # this import will be used later
 # import types
 
@@ -61,6 +65,9 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
         compteurcallplugin = getattr(xmppobject, "num_call%s" % action)
 
         if compteurcallplugin == 0:
+            if statfuncton:
+                xmppobject.stat_registor_agent = statcallplugin(xmppobject,
+                                                                plugin['NAME'])
             read_conf_remote_registeryagent(xmppobject)
             logger.debug("Including debug information for list jid %s" % (xmppobject.registeryagent_showinfomachine))
             # return
@@ -69,6 +76,9 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
             # add function for event change staus des autre agent
             # function_dynamique_declaration_plugin(xmppobject)
             # intercepte event change status call function
+        else:
+            if statfuncton:
+                xmppobject.stat_registor_agent.statutility()
         showinfobool = False
         listupt = [x.upper() for x in xmppobject.registeryagent_showinfomachine]
         for x in listupt:
@@ -1187,6 +1197,8 @@ def read_conf_remote_registeryagent(xmppobject):
         xmppobject.blacklisted_mac_addresses = ["00\:00\:00\:00\:00\:00"]
         xmppobject.registeryagent_showinfomachine = []
         xmppobject.use_uuid = True
+        if statfuncton:
+            xmppobject.stat_registor_agent.display_param_config( msg="DEFAULT")
     else:
         Config = ConfigParser.ConfigParser()
         Config.read(pathfileconf)
@@ -1249,6 +1261,13 @@ def read_conf_remote_registeryagent(xmppobject):
                 # Default configuration
                 xmppobject.registeryagent_showinfomachine = []
                 logger.warning("showinfomachine default value is []")
+
+            if statfuncton:
+                xmppobject.stat_registor_agent.load_param_lap_time_stat_(Config)
+                xmppobject.stat_registor_agent.display_param_config("CONFIG")
+        else:
+            if statfuncton:
+                xmppobject.stat_registor_agent.display_param_config("DEFAULT")
 
     logger.debug("Plugin list registered is %s" % xmppobject.pluginlistregistered)
     logger.debug("Plugin list unregistered is %s" % xmppobject.pluginlistunregistered)
