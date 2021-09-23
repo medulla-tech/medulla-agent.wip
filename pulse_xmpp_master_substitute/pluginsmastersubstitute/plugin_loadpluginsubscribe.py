@@ -28,14 +28,23 @@ import traceback
 from sleekxmpp import jid
 import types
 from lib.plugins.xmpp import XmppMasterDatabase
-
+import os
 import time
+
+from lib.utils import file_put_contents
+import ConfigParser
+try:
+    from lib.stat import statcallplugin
+    statfuncton = True
+except:
+    statfuncton = False
+
 logger = logging.getLogger()
 DEBUGPULSEPLUGIN = 25
 
 # this plugin calling to starting agent
 
-plugin = {"VERSION": "1.10", "NAME": "loadpluginsubscribe", "TYPE": "substitute"}
+plugin = {"VERSION": "1.11", "NAME": "loadpluginsubscribe", "TYPE": "substitute"}
 
 def action( objectxmpp, action, sessionid, data, msg, dataerreur):
     logger.debug("=====================================================")
@@ -44,6 +53,9 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
 
     compteurcallplugin = getattr(objectxmpp, "num_call%s" % action)
     if compteurcallplugin == 0:
+        if statfuncton:
+            objectxmpp.stat_subcription_agent = statcallplugin(objectxmpp,
+                                                            plugin['NAME'])
         read_conf_load_plugin_subscribe(objectxmpp)
         objectxmpp.add_event_handler('changed_status', objectxmpp.changed_status)
 
@@ -67,9 +79,38 @@ def read_conf_load_plugin_subscribe(objectxmpp):
         The folder where the configuration file must be is in the objectxmpp.config.pathdirconffile variable.
     """
     objectxmpp.changed_status = types.MethodType(changed_status, objectxmpp)
-
+   
+    namefichierconf = plugin['NAME'] + ".ini"
+    objectxmpp.pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf)
+    if not os.path.isfile(objectxmpp.pathfileconf):
+        logger.error("plugin %s\nConfiguration file  missing\n  %s" % (plugin['NAME'],
+                                                                       objectxmpp.pathfileconf))
+        dataconfigfile ="[parameters]\ntime_between_checks =  60\n"
+        file_put_contents(objectxmpp.pathfileconf, dataconfigfile)
+        if statfuncton:
+            objectxmpp.stat_subcription_agent.display_param_config( msg="DEFAULT")
+        return False
+    else:
+        Config = ConfigParser.ConfigParser()
+        Config.read(objectxmpp.pathfileconf)
+        if os.path.exists(objectxmpp.pathfileconf + ".local"):
+            Config.read(objectxmpp.pathfileconf + ".local")
+        if Config.has_section("parameters"):
+           
+            if statfuncton:
+                objectxmpp.stat_subcription_agent.load_param_lap_time_stat_(Config)
+                objectxmpp.stat_subcription_agent.display_param_config("CONFIG")
+        else:
+            logger.error("see SECTION [parameters] mising in file : %s " % objectxmpp.pathfileconf)
+            objectxmpp.assessor_agent_errorconf = True
+            if statfuncton:
+                objectxmpp.stat_subcription_agent.display_param_config("DEFAULT")
+            return False
+    return True
 
 def changed_status(self, presence):
+    if statfuncton:
+        self.stat_subcription_agent.statutility()
     frommsg = jid.JID(presence['from'])
     logger.debug("Message from %s" % frommsg)
     spresence = str(presence['from'])
