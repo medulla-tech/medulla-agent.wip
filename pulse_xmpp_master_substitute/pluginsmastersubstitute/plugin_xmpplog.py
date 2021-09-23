@@ -27,6 +27,13 @@ import logging
 from lib.plugins.xmpp import XmppMasterDatabase
 import re
 
+from lib.utils import file_put_contents
+import ConfigParser
+try:
+    from lib.stat import statcallplugin
+    statfuncton = True
+except:
+    statfuncton = False
 # this import will be used later
 # import types
 
@@ -40,6 +47,9 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
     logger.debug("=====================================================")
     compteurcallplugin = getattr(xmppobject, "num_call%s"%action)
     if compteurcallplugin == 0:
+        if statfuncton:
+            xmppobject.stat_logger_agent = statcallplugin(xmppobject,
+                                                            plugin['NAME'])
         xmppobject.status_rules = []
         loggerliststatus = XmppMasterDatabase().get_log_status()
         try:
@@ -50,6 +60,9 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
         except:
             logger.error("\n%s" % (traceback.format_exc()))
         read_conf_log_agent(xmppobject)
+    else:
+        if statfuncton:
+            xmppobject.stat_logger_agent.statutility()
     try :
         dataobj = data
         if "type" in dataobj and dataobj['type'] == "deploy" and  'text' in dataobj:
@@ -175,7 +188,29 @@ def read_conf_log_agent(xmppobject):
     namefichierconf = plugin['NAME'] + ".ini"
     pathfileconf = os.path.join(xmppobject.config.pathdirconffile, namefichierconf)
     if not os.path.isfile(pathfileconf):
-        pass
+        logger.error("plugin %s\nConfiguration file  missing\n  %s" % (plugin['NAME'],
+                                                                       pathfileconf))
+        dataconfigfile ="[parameters]\ntime_between_checks =  1800\n"
+        file_put_contents(pathfileconf, dataconfigfile)
+        if statfuncton:
+            xmppobject.stat_logger_agent.display_param_config( msg="DEFAULT")
+        return False
+    else:
+        Config = ConfigParser.ConfigParser()
+        Config.read(pathfileconf)
+        if os.path.exists(pathfileconf + ".local"):
+            Config.read(pathfileconf + ".local")
+        if Config.has_section("parameters"):
+            if statfuncton:
+                xmppobject.stat_logger_agent.load_param_lap_time_stat_(Config)
+                xmppobject.stat_logger_agent.display_param_config("CONFIG")
+        else:
+            logger.error("see SECTION [parameters] mising in file : %s " % pathfileconf)
+            xmppobject.assessor_agent_errorconf = True
+            if statfuncton:
+                xmppobject.stat_logger_agent.display_param_config("DEFAULT")
+            return False
+    return True
 
 def searchstatus(xmppobject, chaine):
     for t in xmppobject.status_rules:
