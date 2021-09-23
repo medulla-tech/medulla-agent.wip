@@ -21,6 +21,13 @@
 
 # file : pulse_xmpp_master_substitute/pluginsmastersubstitute/plugin_loadmonitoringconfig.py
 
+# This plugin makes it possible to implement the "plugin_loadmonitoringConfig" function dynamically in the loaded code.
+# Currently, this plugin is implemented by the Agent 'Substitute Register'.
+# See pluginliststart, pluginlistregistered and pluginListunrode recorded in the substitute file.ini. Register 
+
+# To remove any ambiguity
+# This plugin is not the plugin used by the substitute monitoring
+
 import base64
 import json
 import os
