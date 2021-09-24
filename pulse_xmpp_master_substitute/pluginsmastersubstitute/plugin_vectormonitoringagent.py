@@ -29,9 +29,20 @@ import logging
 import traceback
 from lib.plugins.xmpp import XmppMasterDatabase
 
+import os
+import ConfigParser
+from lib.utils import file_put_contents
+import netaddr
+from math import cos, sin, atan2, sqrt
+try:
+    from lib.stat import statcallplugin
+    statfuncton = True
+except:
+    statfuncton = False
+
 logger = logging.getLogger()
 
-plugin = {"VERSION": "1.4", "NAME": "vectormonitoringagent", "TYPE": "substitute"}
+plugin = {"VERSION": "1.5", "NAME": "vectormonitoringagent", "TYPE": "substitute"}
 
 def process_system(functionname,
                    xmppobject,
@@ -116,50 +127,53 @@ def process_generic(functionname,
                     id_machine,
                     hostname,
                     id_mon_machine):
-    device_type = functionname[8:]
-    logger.debug("Device %s" % device_type)
-    serial, status, firmware, alarm_msg = ["", "ready", "", []]
-    if "serial" in data:
-        serial = data['serial']
-        del data['serial']
-    if "status" in data and data['status'] != "":
-        status = data['status']
-        del data['status']
-    if "firmware" in data:
-        firmware = data['firmware']
-        del data['firmware']
-    if 'message' in data:
-        if isinstance(data['message'], basestring):
-            alarm_msg = [data['message']]
-        elif isinstance(data['message'], list):
-            alarm_msg = data['message']
-        del data['message']
-    logger.debug("call setMonitoring_device_reg hostname %s\n"\
-                                        " id_mon_machine %s \n"\
-                                        " device_type, %s\n"\
-                                        " serial %s \n" \
-                                        " firmware %s\n" \
-                                        " status %s\n" \
-                                        " alarm_msg %s\n" \
-                                        " metriques %s"% (hostname,
-                                                            id_mon_machine,
-                                                            device_type,
-                                                            serial,
-                                                            firmware,
-                                                            status,
-                                                            json.dumps(alarm_msg),
-                                                            json.dumps(data['metriques'])))
-    XmppMasterDatabase().setMonitoring_device_reg(hostname,
-                                                  xmppobject,
-                                                  msg_from,
-                                                  sessionid,
-                                                  id_mon_machine,
-                                                  device_type,
-                                                  serial,
-                                                  firmware,
-                                                  status,
-                                                  json.dumps(alarm_msg),
-                                                  json.dumps(data['metriques']))
+    try:
+        device_type = functionname[8:]
+        logger.debug("Device %s" % device_type)
+        serial, status, firmware, alarm_msg = ["", "ready", "", []]
+        if "serial" in data:
+            serial = data['serial']
+            del data['serial']
+        if "status" in data and data['status'] != "":
+            status = data['status']
+            del data['status']
+        if "firmware" in data:
+            firmware = data['firmware']
+            del data['firmware']
+        if 'message' in data:
+            if isinstance(data['message'], basestring):
+                alarm_msg = [data['message']]
+            elif isinstance(data['message'], list):
+                alarm_msg = data['message']
+            del data['message']
+        logger.debug("\ncall setMonitoring_device_reg hostname %s\n"\
+                                            "\t id_mon_machine %s \n"\
+                                            "\t device_type, %s\n"\
+                                            "\t serial %s \n" \
+                                            "\t firmware %s\n" \
+                                            "\t status %s\n" \
+                                            "\t alarm_msg %s\n" \
+                                            "\t metriques %s"% (hostname,
+                                                                id_mon_machine,
+                                                                device_type,
+                                                                serial,
+                                                                firmware,
+                                                                status,
+                                                                json.dumps(alarm_msg),
+                                                                json.dumps(data['metriques'])))
+        XmppMasterDatabase().setMonitoring_device_reg(hostname,
+                                                    xmppobject,
+                                                    msg_from,
+                                                    sessionid,
+                                                    id_mon_machine,
+                                                    device_type,
+                                                    serial,
+                                                    firmware,
+                                                    status,
+                                                    json.dumps(alarm_msg),
+                                                    json.dumps(data['metriques']))
+    except Exception:
+        logger.error("\n%s" % (traceback.format_exc()))
 
 def callFunction(functionname, *args, **kwargs):
     functionname = "process_%s" % functionname.lower()
@@ -169,6 +183,7 @@ def callFunction(functionname, *args, **kwargs):
         return getattr(thismodule,
                        functionname)(functionname, *args, **kwargs)
     except AttributeError:
+        logger.debug("%s no defined: call process_generic"%functionname)
         process_generic(functionname, *args, **kwargs)
     except Exception:
         logger.error("\n%s" % (traceback.format_exc()))
@@ -179,6 +194,7 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
     logger.debug(json.dumps(data, indent=4))
     logger.debug("#################################################")
 
+
     compteurcallplugin = getattr(xmppobject, "num_call%s" % action)
     logger.debug("compteur num_call pluging %s %s" % (action,
                                                       compteurcallplugin))
@@ -188,13 +204,27 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
             XmppMasterDatabase().getlistMonitoring_devices_type()
         logger.debug("list device %s" % (xmppobject.typelistMonitoring_device))
 
+    try:
+        if compteurcallplugin == 0:
+            if statfuncton:
+                xmppobject.stat_vectormonitoringagent_agent = statcallplugin(xmppobject,
+                                                                    plugin['NAME'])
+            read_conf_vectormonitoringagent(xmppobject)
+        else:
+            if statfuncton:
+                xmppobject.stat_vectormonitoringagent_agent.statutility()
+            pass
+
+    except Exception:
+        logger.error("\n%s" % (traceback.format_exc()))
+
 
     if "subaction" in data and \
         data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
         # inscription message alert depuis machine
 
         if 'from' in data and data['from'] != "":
-             machine = XmppMasterDatabase().getMachinefromjid(data['from'])
+            machine = XmppMasterDatabase().getMachinefromjid(data['from'])
         else:
             machine = XmppMasterDatabase().getMachinefromjid(message['from'])
 
@@ -223,3 +253,37 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
                                         machine['id'],
                                         machine['hostname'],
                                         id_mom_machine)
+    #except Exception:
+        #logger.error("\n%s" % (traceback.format_exc()))
+
+
+
+def read_conf_vectormonitoringagent(objectxmpp):
+    """
+        lit la configuration du plugin
+    """
+
+    namefichierconf = plugin['NAME'] + ".ini"
+    pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf)
+    if not os.path.isfile(pathfileconf):
+        logger.error("plugin %s\nConfiguration file  missing\n  %s" % (plugin['NAME'],
+                                                                       pathfileconf))
+        dataconfigfile ="[parameters]\ntime_between_checks =  60\n"
+        file_put_contents(pathfileconf, dataconfigfile)
+        if statfuncton:
+            objectxmpp.stat_vectormonitoringagent_agent.display_param_config( msg="DEFAULT")
+        return False
+    else:
+        Config = ConfigParser.ConfigParser()
+        Config.read(pathfileconf)
+        if os.path.exists(pathfileconf + ".local"):
+            Config.read(pathfileconf + ".local")
+        if Config.has_section("parameters"):
+            if statfuncton:
+                objectxmpp.stat_vectormonitoringagent_agent.load_param_lap_time_stat_(Config)
+                objectxmpp.stat_vectormonitoringagent_agent.display_param_config("CONFIG")
+        else:
+            logger.error("see SECTION [parameters] mising in file : %s " % pathfileconf)
+            if statfuncton:
+                objectxmpp.stat_vectormonitoringagent_agent.display_param_config("DEFAULT")
+    return True
