@@ -582,15 +582,17 @@ class confParameter:
         self.chatserver = Config.get('chat', 'domain')
         # Smallest mac address
         nameuser = self.NickName
-
+        domain = Config.get('chat','domain')
         if Config.has_option("jid_01", "jidname"):
             self.jidagent = Config.get('jid_01', 'jidname')
             nameuser = jid.JID(self.jidagent).user
-        self.jidagent = "%s@%s/%s" % (nameuser,
-                                      Config.get(
-                                          'chat',
-                                          'domain'),
-                                      ressource)
+        if jid.JID(self.jidagent).user == "rs%s"%domain:
+            self.jidagent = "%s@%s/mainrelay" % (nameuser,
+                                          domain)
+        else:
+            self.jidagent = "%s@%s/%s" % (nameuser,
+                                          domain,
+                                          ressource)
         try:
             self.nbrotfile = Config.getint('global', 'nb_rot_file')
         except BaseException:
