@@ -582,11 +582,11 @@ class confParameter:
         self.chatserver = Config.get('chat', 'domain')
         # Smallest mac address
         nameuser = self.NickName
-        domain = Config.get('chat','domain')
+        domain = Config.get('chat', 'domain')
         if Config.has_option("jid_01", "jidname"):
             self.jidagent = Config.get('jid_01', 'jidname')
             nameuser = jid.JID(self.jidagent).user
-        if jid.JID(self.jidagent).user == "rs%s"%domain:
+        if jid.JID(self.jidagent).bare == "rs%s@%s"%(domain,domain):
             self.jidagent = "%s@%s/mainrelay" % (nameuser,
                                           domain)
         else:
