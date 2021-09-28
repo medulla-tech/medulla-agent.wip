@@ -1662,15 +1662,15 @@ class MUCBot(sleekxmpp.ClientXMPP):
 
     def initialise_syncthing(self):
         try:
-            logger.info("____________________________________________")
-            logger.info("___________ INITIALISE SYNCTHING ___________")
-            logger.info("____________________________________________")
             self.config.syncthing_on
         except NameError:
             self.config.syncthing_on = False
 
         ################################### initialise syncthing ###################################
         if self.config.syncthing_on:
+            logger.info("____________________________________________")
+            logger.info("___________ INITIALISE SYNCTHING ___________")
+            logger.info("____________________________________________")
             if self.config.agenttype not in ['relayserver']:
                 if self.config.sched_check_syncthing_deployment:
                     self.schedule('scan_syncthing_deploy', 55, self.scan_syncthing_deploy, repeat=True)
@@ -1699,6 +1699,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
                 logging.error("functioning of the degraded agent. impossible to use syncthing")
             #self.syncthing = syncthing(configfile = fichierconfsyncthing)
         ################################### syncthing ###################################
+        else:
+            logger.warning("____________________________________________")
+            logger.warning("______________ SYNCTHING OFF _______________")
+            logger.warning("____________________________________________")
 
     def send_message_agent( self,
                             mto,
