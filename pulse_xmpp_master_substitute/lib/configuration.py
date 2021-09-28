@@ -100,7 +100,20 @@ class confParameter:
         self.jidmastersubstitute = ""
         if Config.has_option("connection", "jidmastersubstitute"):
             self.jidmastersubstitute = Config.get('connection', 'jidmastersubstitute')
+
+
         if self.jidmastersubstitute == "":
+            logging.getLogger().error("jidmastersubstitute parameter missing in file config : %s : "%namefileconfig)
+            sys.exit(1)
+
+        result = self.jidmastersubstitute.split('/')
+        if result:
+            self.jidmastersubstitute = "%s/substitut"%result[0]
+        else:
+            logging.getLogger().error("jidmastersubstitute parameter missing in file config : %s : "%namefileconfig)
+            sys.exit(1)
+        result = self.jidmastersubstitute.split('@')
+        if not result:
             logging.getLogger().error("jidmastersubstitute parameter missing in file config : %s : "%namefileconfig)
             sys.exit(1)
 
