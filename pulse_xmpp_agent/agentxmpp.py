@@ -391,11 +391,22 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                                 "config.xml")
             self.tmpfile = "/tmp/confsyncting.txt"
         # TODO: Disable this try if synthing is not activated. Prevent backtraces
+
+        if not os.path.exists(self.fichierconfsyncthing):
+            if self.config.syncthing_on:
+                logging.error("config ou install error : configuration syncting missing %s" %self.fichierconfsyncthing)
+                logging.warning("forcing syncthing mode off (conf syncthing missing)")
+                self.config.syncthing_on = False
+            else:
+                logging.info("configuration syncting missing %s but config syncthing off" %self.fichierconfsyncthing)
         try:
             hostnameiddevice = None
+            self.deviceid = "syncthing no configured"
             if self.boundjid.domain == "pulse":
                 hostnameiddevice = "pulse"
-            self.deviceid = iddevice(configfile=self.fichierconfsyncthing, deviceName=hostnameiddevice)
+            if os.path.exists(self.fichierconfsyncthing):
+                self.deviceid = iddevice(configfile=self.fichierconfsyncthing,
+                                         deviceName=hostnameiddevice)
         except Exception:
             pass
 
