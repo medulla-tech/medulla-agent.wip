@@ -533,17 +533,23 @@ class confParameter:
         if Config.has_option("plugin", "pluginlist"):
             pluginlist = Config.get('plugin', 'pluginlist').split(",")
             pluginlist = [x.strip() for x in pluginlist]
-            for z in pluginlist:
-                namefile = "%s.ini" % os.path.join(self.nameplugindir, z)
-                if os.path.isfile(namefile):
-                    liststuple = self.loadparametersplugins(namefile)
-                    for keyparameter, valueparameter in liststuple:
-                        setattr(self, keyparameter, valueparameter)
-                else:
-                    logger.warning(
-                        "parameter File plugin %s : missing" %
-                        self.nameplugindir)
-                    #self.nameplugindir=""
+            if pluginlist:
+                logger.warning(
+                        "load file configuration plugin list %s" % pluginlist)
+                for z in pluginlist:
+                    namefile = "%s.ini" % os.path.join(self.nameplugindir, z)
+                    if os.path.isfile(namefile):
+                        liststuple = self.loadparametersplugins(namefile)
+                        for keyparameter, valueparameter in liststuple:
+                            setattr(self, keyparameter, valueparameter)
+                    else:
+                        logger.warning(
+                            "for plugin %s" % z)
+                        logger.warning(
+                            "parameter File plugin %s : missing" %namefile)
+            else:
+                logger.warning(
+                        "there are not plugin list for loading")
         try:
             self.agentcommand = Config.get('global', 'relayserver_agent')
         except BaseException:
