@@ -41,7 +41,8 @@ from utils import   shellcommandtimeout, \
                     pulseuser_useraccount_mustexist, \
                     pulseuser_profile_mustexist, \
                     create_idrsa_on_client, \
-                    add_key_to_authorizedkeys_on_client
+                    add_key_to_authorizedkeys_on_client, \
+                    globaldatautil
 import socket
 from  agentconffile import  directoryconffile
 import zlib
@@ -137,7 +138,7 @@ class functionsynchroxmpp:
         result = {}
         private_key_ars = os.path.join(os.path.expanduser('~reversessh'),
                                        '.ssh',
-                                       "id_rsa")
+                                       globaldatautil['key'])
         result['private_key_ars'] = file_get_contents(private_key_ars)
         result['public_key_ars'] = file_get_contents("%s.pub" %
                                                      private_key_ars)
@@ -156,7 +157,7 @@ class functionsynchroxmpp:
             private_key_ars = datareverse['private_key_ars'].strip(' \t\n\r')
             create_idrsa_on_client('pulseuser', private_key_ars)
         if sys.platform.startswith('linux'):
-            filekey = os.path.join(os.path.expanduser('~pulseuser'), ".ssh", "id_rsa")
+            filekey = os.path.join(os.path.expanduser('~pulseuser'), ".ssh", globaldatautil['key'])
             dd = """#!/bin/bash
             /usr/bin/ssh -t -t -%s 0.0.0.0:%s:localhost:%s -o StrictHostKeyChecking=no -i "%s" -l reversessh %s -p %s&
             """ % (datareverse['type_reverse'],
@@ -181,12 +182,12 @@ class functionsynchroxmpp:
                                        "Users",
                                        "pulseuser",
                                        ".ssh",
-                                       "id_rsa")
+                                       globaldatautil['key'])
             except Exception:
                 filekey = os.path.join(os.environ["ProgramFiles"],
                                        'pulse',
                                        ".ssh",
-                                       "id_rsa")
+                                       globaldatautil['key'])
 
             sshexec = os.path.join(os.environ["ProgramFiles"],
                                    "OpenSSH",
@@ -221,7 +222,7 @@ class functionsynchroxmpp:
         elif sys.platform.startswith('darwin'):
             filekey = os.path.join(os.path.expanduser('~pulseuser'),
                                    ".ssh",
-                                   "id_rsa")
+                                   globaldatautil['key'])
             cmd = """#!/bin/bash
             /usr/bin/ssh -t -t -%s 0.0.0.0:%s:localhost:%s -o StrictHostKeyChecking=no -i "%s" -l reversessh %s -p %s&
             """ % (datareverse['type_reverse'],
@@ -412,12 +413,12 @@ class functionsynchroxmpp:
                 if info_ask == "get_ars_key_id_rsa":
                     private_key_ars = os.path.join(os.path.expanduser('~reversessh'),
                                                    '.ssh',
-                                                   "id_rsa")
+                                                   globaldatautil['key'])
                     result['result']['informationresult'][info_ask] = file_get_contents(private_key_ars)
                 if info_ask == "get_ars_key_id_rsa_pub":
                     public_key_ars = os.path.join(os.path.expanduser('~reversessh'),
                                                   '.ssh',
-                                                  "id_rsa.pub")
+                                                  globaldatautil['keypub'])
                     result['result']['informationresult'][info_ask] = file_get_contents(public_key_ars)
                 if info_ask == "get_free_tcp_port":
                     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

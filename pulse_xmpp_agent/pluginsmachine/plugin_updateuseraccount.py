@@ -51,6 +51,7 @@ def action(xmppobject, action, sessionid, data, message, dataerreur):
     logger.debug("call %s from %s" % (plugin, message['from']))
     logger.debug("###################################################")
     msg = []
+    msg.append("input updateuseraccount ------------------- %s ---------------"%xmppobject.boundjid.bare)
     try:
         # Make sure user account and profile exists
         username = 'pulseuser'
@@ -62,48 +63,60 @@ def action(xmppobject, action, sessionid, data, message, dataerreur):
         if result is False:
             logger.error(msglog)
         msg.append(msglog)
-
         # Get necessary keys from relay server
         jidars = xmppobject.config.agentcommand
         jidarsmain = 'rspulse@pulse/mainrelay'
-        res = get_ars_key(xmppobject, jidars)
-        if res is None: return
-        result = res['result']['informationresult']
-        relayserver_pubkey = result['keypub']
-        relayserver_reversessh_idrsa = result['get_ars_key_id_rsa']
-        logger.debug("relayserver_pubkey: %s" % relayserver_pubkey)
-        logger.debug("relayserver_reversessh_idrsa: %s" % relayserver_reversessh_idrsa)
-
-
-
-        if jidarsmain == jidars:
-            mainserver_pubkey = relayserver_pubkey
+        checkjidars = utils.check_keys_installed(jidars.split("@")[0], username)
+        checkjidrspulse = utils.check_keys_installed( "rspulse", username)
+        if checkjidars:
+            msg.append("key for ars %s exist" % jidars)
         else:
-            #ars on recherche key pub ars principal
-            res = get_ars_key(xmppobject, jidarsmain)
+            msg.append("install key for ars %s" % jidars)
+
+        if checkjidrspulse:
+            msg.append("key for ars %s exist" % jidarsmain)
+        else:
+            msg.append("install key for ars %s" % jidarsmain)
+
+        if not( checkjidars and checkjidrspulse):
+            res = get_ars_key(xmppobject, jidars)
             if res is None: return
             result = res['result']['informationresult']
-            mainserver_pubkey = result['keypub']
-            logger.debug("mainserver_pubkey: %s" % mainserver_pubkey)
-            # Add the keys to pulseuser account
-            result, msglog = utils.create_idrsa_on_client(username, relayserver_reversessh_idrsa)
+            relayserver_pubkey = result['keypub']
+            relayserver_reversessh_idrsa = result['get_ars_key_id_rsa']
+            msg.append("relayserver_pubkey: %s" % relayserver_pubkey)
 
-
-
-        if result is False:
-            logger.error(msglog)
-        msg.append(msglog)
-        result, msglog = utils.add_key_to_authorizedkeys_on_client(username, relayserver_pubkey)
-        if result is False:
-            logger.error(msglog)
-        msg.append(msglog)
-        result, msglog = utils.add_key_to_authorizedkeys_on_client(username, mainserver_pubkey)
-        if result is False:
-            logger.error(msglog)
-        msg.append(msglog)
-
+            msg.append("relayserver_reversessh_idrsa: %s" % relayserver_reversessh_idrsa)
+            if jidarsmain == jidars:
+                mainserver_pubkey = relayserver_pubkey
+            else:
+                #ars on recherche key pub ars principal
+                res = get_ars_key(xmppobject, jidarsmain)
+                if res is None: return
+                result = res['result']['informationresult']
+                mainserver_pubkey = result['keypub']
+                msg.append("mainserver_pubkey: %s" % mainserver_pubkey)
+                # Add the keys to pulseuser account
+                result, msglog = utils.create_idrsa_on_client(username, relayserver_reversessh_idrsa)
+            if result is False:
+                logger.error(msglog)
+            msg.append(msglog)
+            result, msglog = utils.add_key_to_authorizedkeys_on_client(username, relayserver_pubkey)
+            if result is False:
+                logger.error(msglog)
+            msg.append(msglog)
+            result, msglog = utils.add_key_to_authorizedkeys_on_client(username, mainserver_pubkey)
+            if result is False:
+                logger.error(msglog)
+            msg.append(msglog)
+        else:
+            msg.append(msglog)
         # Write message to logger
+        msg.append("out updateuseraccount ------------------- %s ---------------"%xmppobject.boundjid.bare)
         for line in msg:
             logger.debug(line)
     except Exception:
+        msg.append("out updateuseraccount ------------------- %s ---------------"%xmppobject.boundjid.bare)
+        for line in msg:
+            logger.debug(line)
         logger.error("\n%s" % (traceback.format_exc()))

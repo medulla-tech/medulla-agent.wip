@@ -29,7 +29,8 @@ import pycurl
 import platform
 from lib import utils, \
                 managepackage, \
-                grafcetdeploy
+                grafcetdeploy, \
+                globaldatautil
 import copy
 import traceback
 import time
@@ -1499,7 +1500,7 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
                             clientssshport = data_in_session['remoteport']
                             ipmachine = "localhost"
 
-                        optionscp = "-o IdentityFile=/root/.ssh/id_rsa "\
+                        optionscp = "-o IdentityFile=/root/.ssh/%s "\
                                     "-o StrictHostKeyChecking=no "\
                                     "-o UserKnownHostsFile=/dev/null "\
                                     "-o Batchmode=yes "\
@@ -1509,7 +1510,8 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
                                     "-o LogLevel=ERROR "\
                                     "-o ConnectTimeout=40 "\
                                     "-o Port=%s "\
-                                    "%s %s@%s:\"\\\"%s\\\"\"" % (clientssshport,
+                                    "%s %s@%s:\"\\\"%s\\\"\"" % (globaldatautil['key'],
+                                                                 clientssshport,
                                                                  pathin,
                                                                  data_in_session['userssh'],
                                                                  ipmachine,
@@ -1531,7 +1533,7 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
                         else:
                             pathnew = data_in_session['folders_packages'] + "/" + packuuid + "/"
                         pathnew = pathnew.replace("//","/")
-                        optionrsync = " -e \"ssh -o IdentityFile=/root/.ssh/id_rsa "\
+                        optionrsync = " -e \"ssh -o IdentityFile=/root/.ssh/%s "\
                                         "-o UserKnownHostsFile=/dev/null "\
                                         "-o StrictHostKeyChecking=no "\
                                         "-o Batchmode=yes "\
@@ -1541,7 +1543,8 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
                                         "-o LogLevel=ERROR "\
                                         "-o ConnectTimeout=40 "\
                                         "-o Port=%s\" "\
-                                        "-av --chmod=777 %s/ %s@%s:'%s'" % (clientssshport,
+                                        "-av --chmod=777 %s/ %s@%s:'%s'" % (globaldatautil['key'],
+                                                                            clientssshport,
                                                                             pathin,
                                                                             data_in_session['userssh'],
                                                                             ipmachine,
@@ -2221,15 +2224,15 @@ def pull_package_transfert_rsync(datasend, objectxmpp, ippackage, sessionid, cmd
         execscp = "scp"
         error = False
         if sys.platform.startswith('linux'):
-            path_key_priv =  os.path.join(os.path.expanduser('~pulseuser'), ".ssh", "id_rsa")
+            path_key_priv =  os.path.join(os.path.expanduser('~pulseuser'), ".ssh", globaldatautil['key'])
             #localdest = " '%s/%s'" % (managepackage.managepackage.packagedir(), packagename)
             localdest = " '%s'" % (managepackage.managepackage.packagedir())
         elif sys.platform.startswith('win'):
             try:
                 win32net.NetUserGetInfo('','pulseuser',0)
-                path_key_priv =  os.path.join("c:\Users\pulseuser", ".ssh", "id_rsa")
+                path_key_priv =  os.path.join("c:\Users\pulseuser", ".ssh", globaldatautil['key'])
             except:
-                path_key_priv = os.path.join("c:\progra~1", "pulse", '.ssh', "id_rsa")
+                path_key_priv = os.path.join("c:\progra~1", "pulse", '.ssh', globaldatautil['key'])
             localdest = " \"%s/%s\"" % (managepackage.managepackage.packagedir(), packagename)
             if platform.machine().endswith('64'):
                 execrsync = "C:\\\\Windows\\\\SysWOW64\\\\rsync.exe"
@@ -2237,7 +2240,7 @@ def pull_package_transfert_rsync(datasend, objectxmpp, ippackage, sessionid, cmd
                 execrsync = "C:\\\\Windows\\\\System32\\\\rsync.exe"
             execscp = '"c:\progra~1\OpenSSH\scp.exe"'
         elif sys.platform.startswith('darwin'):
-            path_key_priv =  os.path.join("/", "var", "root", ".ssh", "id_rsa")
+            path_key_priv =  os.path.join("/", "var", "root", ".ssh", globaldatautil['key'])
             #localdest = " '%s/%s'" % (managepackage.managepackage.packagedir(), packagename)
             localdest = " '%s'" % (managepackage.managepackage.packagedir())
         else :

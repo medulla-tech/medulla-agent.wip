@@ -56,7 +56,8 @@ import string
 logger = logging.getLogger()
 
 DEBUGPULSE = 25
-
+#datagloblal
+globaldatautil = { "key" : "id_rsapulse", "keypub" :  "id_rsapulse.pub" }
 
 if sys.platform.startswith('win'):
     import wmi
@@ -1641,22 +1642,23 @@ def utc2local(utc):
 def keypub():
     keypubstring = ""
     if sys.platform.startswith('linux'):
-        if not os.path.isfile("/root/.ssh/id_rsa"):
-            obj = simplecommand('ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""')
-        return file_get_contents("/root/.ssh/id_rsa.pub")
+        if not os.path.isfile("/root/.ssh/%s"%globaldatautil['key']):
+            obj = simplecommand('ssh-keygen -b 2048 -t rsa -f /root/.ssh/%s -q -N ""' % globaldatautil['key'])
+        return file_get_contents("/root/.ssh/%s"%globaldatautil['keypub'])
     elif sys.platform.startswith('win'):
         try:
             win32net.NetUserGetInfo('', 'pulseuser', 0)
             pathkey = os.path.join("c:\Users\pulseuser", ".ssh")
         except:
             pathkey = os.path.join(os.environ["ProgramFiles"], "pulse", '.ssh')
-        if not os.path.isfile(os.path.join(pathkey, "id_rsa")):
-            obj = simplecommand('"C:\Program Files\OpenSSH\ssh-keygen.exe" -b 2048 -t rsa -f "%s" -q -N ""' % os.path.join(pathkey, "id_rsa"))
-        return file_get_contents(os.path.join(pathkey, "id_rsa.pub"))
+        if not os.path.isfile(os.path.join(pathkey, globaldatautil['key'])):
+            obj = simplecommand('"C:\Program Files\OpenSSH\ssh-keygen.exe" -b 2048 -t rsa -f "%s" -q -N ""' % os.path.join(pathkey,
+                                                                                                                           globaldatautil['key']))
+        return file_get_contents(os.path.join(pathkey, globaldatautil['keypub']))
     elif sys.platform.startswith('darwin'):
-        if not os.path.isfile("/var/root/.ssh/id_rsa"):
-            obj = simplecommand('ssh-keygen -b 2048 -t rsa -f /var/root/.ssh/id_rsa -q -N ""')
-        return file_get_contents("/var/root/.ssh/id_rsa.pub")
+        if not os.path.isfile("/var/root/.ssh/%s"%globaldatautil['key']):
+            obj = simplecommand('ssh-keygen -b 2048 -t rsa -f /var/root/.ssh/%s -q -N ""'%globaldatautil['key'])
+        return file_get_contents("/var/root/.ssh/%s"%globaldatautil['keypub'])
 
 #use function for relayserver
 def deletekey(file, key, back=True):
@@ -2558,12 +2560,15 @@ def create_idrsa_on_client(username='pulseuser', key=''):
     Used on client machine for connecting to relay server
     """
     if sys.platform.startswith('win'):
-        id_rsa_path = os.path.join('C:\Users', username, '.ssh', 'id_rsa')
+        id_rsa_path = os.path.join('C:\Users', username, '.ssh',  globaldatautil['key'])
+        #delete_keyfile_cmd = 'del /f /q "%s" ' % id_rsa_path
     else:
-        id_rsa_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'id_rsa')
-    delete_keyfile_cmd = 'del /f /q "%s" ' % id_rsa_path
-    result = simplecommand(encode_strconsole(delete_keyfile_cmd))
-    logger.debug('Creating id_rsa file in %s' % id_rsa_path)
+        id_rsa_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh',  globaldatautil['key'])
+
+    if os.path.exists(id_rsa_path):
+        os.remove(id_rsa_path)
+
+    logger.debug('install  %s' % id_rsa_path)
     if not os.path.isdir(os.path.dirname(id_rsa_path)):
         os.makedirs(os.path.dirname(id_rsa_path), 0700)
     file_put_contents(id_rsa_path, key)
@@ -2644,6 +2649,26 @@ def apply_perms_sshkey(path, private=True):
     msg = 'Success applying permissions to file %s' % path
     return True, msg
 
+def check(namefile, strsearch):
+    """
+        search if string in file
+    """
+    if not os.path.exists(namefile) : return False
+    with open(namefile) as f:
+        if strsearch in f.read():
+            return True
+    return False
+
+def check_keys_installed( userarsname, username='pulseuser'):
+    """
+        verify if key is installed
+    """
+    if sys.platform.startswith('win'):
+        authorized_keys_path = os.path.join('C:\Users', username, '.ssh', 'authorized_keys')
+    else:
+        authorized_keys_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'authorized_keys')
+    return check(authorized_keys_path, userarsname)
+
 def add_key_to_authorizedkeys_on_client(username='pulseuser', key=''):
     """
     Used on client machine for allowing connections from relay server
@@ -2680,7 +2705,7 @@ def add_key_to_authorizedkeys_on_client(username='pulseuser', key=''):
             return False, logs
         return True, msg
     # Function didn't return earlier, meaning the key is not present
-    msg = 'Error add key to authorizedkeys: id_rsa missing'
+    msg = 'Error add key to authorizedkeys: %s missing'%globaldatautil['key']
     return False, msg
 
 def reversessh_useraccount_mustexist_on_relay(username='reversessh'):
@@ -2712,8 +2737,8 @@ def reversessh_keys_mustexist_on_relay(username='reversessh'):
     os.chmod(homedir, 0751)
     os.chown(homedir, uid, -1)
     # Check keys
-    id_rsa_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'id_rsa')
-    public_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'id_rsa.pub')
+    id_rsa_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', globaldatautil['key'])
+    public_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', globaldatautil['keypub'])
     keycheck_cmd = 'ssh-keygen -y -f %s > %s' % (id_rsa_key_path, public_key_path)
     result = simplecommand(encode_strconsole(keycheck_cmd))
     if result['code'] != 0:
@@ -2739,14 +2764,14 @@ def get_relayserver_pubkey(username='root'):
     """
         returns relayserver's root public key
     """
-    public_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'id_rsa.pub')
+    public_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', globaldatautil['keypub'])
     return file_get_contents(public_key_path)
 
 def get_relayserver_reversessh_idrsa(username='reversessh'):
     """
         returns relayserver's reversessh private key
     """
-    idrsa_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', 'id_rsa')
+    idrsa_key_path = os.path.join(os.path.expanduser('~%s' % username), '.ssh', globaldatautil['key'])
     return file_get_contents(idrsa_key_path)
 
 
