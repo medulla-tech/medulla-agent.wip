@@ -6296,6 +6296,25 @@ class XmppMasterDatabase(DatabaseHelper):
         else:
             return {}
 
+    @DatabaseHelper._sessionm
+    def get_machine_from_hostname(self, session, hostname):
+        """
+        Select the machines with from hostname
+        Returns:
+            List of dict. The dict contains all the machines founded.
+        """
+
+        sql = """
+        SELECT
+            *
+        FROM
+            machines
+        WHERE
+            hostname like "%s%%";"""%hostname
+        result = session.execute(sql)
+        session.commit()
+        session.flush()
+        return [{column: value for column, value in rowproxy.items()} for rowproxy in result]
 
     @DatabaseHelper._sessionm
     def SetPresenceMachine(self, session, jid, presence=0):
