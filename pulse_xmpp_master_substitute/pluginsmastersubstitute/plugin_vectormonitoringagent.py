@@ -21,6 +21,7 @@
 # MA 02110-1301, USA.
 #
 # file pluginsmastersubstitute/plugin_vectormonitoringagent.py
+
 import sys
 import json
 import logging
@@ -218,45 +219,43 @@ def action(xmppobject, action, sessionid, data, message, ret, dataobj):
     except Exception:
         logger.error("\n%s" % (traceback.format_exc()))
 
+    try:
+        if "subaction" in data and \
+            data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
+            # inscription message alert depuis machine
 
-    if "subaction" in data and \
-        data['subaction'].lower() in [ "terminalinformations", "terminalalert"]:
-        # inscription message alert depuis machine
+            if 'from' in data and data['from'] != "":
+                machine = XmppMasterDatabase().getMachinefromjid(data['from'])
+            else:
+                machine = XmppMasterDatabase().getMachinefromjid(message['from'])
 
-        if 'from' in data and data['from'] != "":
-            machine = XmppMasterDatabase().getMachinefromjid(data['from'])
-        else:
-            machine = XmppMasterDatabase().getMachinefromjid(message['from'])
+            statusmsg = ""
 
-        statusmsg = ""
-
-        logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
-        if 'status' in data:
-            statusmsg = json.dumps(data['status'])
-        id_mom_machine = XmppMasterDatabase().setMonitoring_machine(
-                                machine['id'],
-                                machine['hostname'],
-                                date=data['date'],
-                                statusmsg=statusmsg)
-        # for each device/service call process
-        if 'device_service' in data:
-            for element in data['device_service']:
-                for devicename in element:
-                    # call process functions defined
-                    if devicename.lower() in xmppobject.typelistMonitoring_device:
-                        # globals()["process_%s"%element](data['opticalReader'])
-                        callFunction(devicename,
-                                        xmppobject,
-                                        str(message['from']),
-                                        sessionid,
-                                        element[devicename],
-                                        machine['id'],
-                                        machine['hostname'],
-                                        id_mom_machine)
-    #except Exception:
-        #logger.error("\n%s" % (traceback.format_exc()))
-
-
+            logger.debug("Machine %s %s" % (machine['id'], machine['hostname']))
+            if 'status' in data:
+                statusmsg = json.dumps(data['status'])
+            id_mom_machine = XmppMasterDatabase().setMonitoring_machine(
+                                    machine['id'],
+                                    machine['hostname'],
+                                    date=data['date'],
+                                    statusmsg=statusmsg)
+            # for each device/service call process
+            if 'device_service' in data:
+                for element in data['device_service']:
+                    for devicename in element:
+                        # call process functions defined
+                        if devicename.lower() in xmppobject.typelistMonitoring_device:
+                            # globals()["process_%s"%element](data['opticalReader'])
+                            callFunction(devicename,
+                                            xmppobject,
+                                            str(message['from']),
+                                            sessionid,
+                                            element[devicename],
+                                            machine['id'],
+                                            machine['hostname'],
+                                            id_mom_machine)
+    except Exception:
+        logger.error("\n%s" % (traceback.format_exc()))
 
 def read_conf_vectormonitoringagent(objectxmpp):
     """
