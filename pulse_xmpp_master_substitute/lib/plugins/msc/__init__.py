@@ -21,7 +21,7 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-
+# file pulse_xmpp_master_substitute/lib/plugins/msc/__init__.py
 """
 Provides access to MSC database
 """
@@ -53,7 +53,10 @@ import logging
 import functools
 
 
+import fcntl
+
 NB_DB_CONN_TRY = 2
+logger = logging.getLogger()
 
 
 class Singleton(object):
@@ -63,6 +66,18 @@ class Singleton(object):
             type._the_instance = object.__new__(type)
         return type._the_instance
 
+class Locker:
+    def __enter__ (self):
+        self.time_entrer = time.time()
+        logger.debug("start wainting lock")
+        self.fp = open("./lockfile.lck","w+")
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
+        logger.debug("acquire jeton %s"%(time.time() - self.time_entrer))
+
+    def __exit__ (self, _type, value, tb):
+        fcntl.flock(self.fp.fileno(), fcntl.LOCK_UN)
+        logger.debug("free jeton %s"%(time.time() - self.time_entrer))
+        self.fp.close()
 
 class ComputerLocationManager(Singleton):
     components = {}
@@ -196,7 +211,24 @@ class DatabaseHelper(Singleton):
             return result
         return __sessionm
 
-# TODO need to check for useless function (there should be many unused one...)
+    # TODO need to check for useless function (there should be many unused one...)
+
+    # Session decorator to create and close session automatically
+    # JFKJFK
+    #@classmethod
+    #def _session(self, func):
+        #@functools.wraps(func)
+        #def __session(self, *args, **kw):
+            #created = False
+            #if not self.session:
+                #self.session = Session(bind=self.db)
+                #created = True
+            #result = func(self, self.session, *args, **kw)
+            #if created:
+                #self.session.close()
+                #self.session = None
+            #return result
+        #return __session
 
 class MscDatabase(DatabaseHelper):
     """
@@ -914,101 +946,102 @@ class MscDatabase(DatabaseHelper):
         """
         datenow = datetime.datetime.now()
         datestr = datenow.strftime('%Y-%m-%d %H:%M:%S')
-        sqlselect="""
-        SELECT
-                `commands`.`id` AS commands_id,
-                `commands`.`title` AS commands_title,
-                `commands`.`creator` AS commands_creator,
-                `commands`.`package_id` AS commands_package_id,
-                `commands`.`start_date` AS commands_start_date,
-                `commands`.`end_date` AS commands_end_date,
-                `commands_on_host`.`id` AS commands_on_host_id,
-                `target`.`target_name` AS target_target_name,
-                `target`.`target_uuid` AS target_target_uuid,
-                `target`.`id_group` AS target_id_group,
-                `target`.`target_macaddr` AS target_target_macaddr
-            FROM
-                commands_on_host
-                    INNER JOIN
-                commands ON commands.id = commands_on_host.fk_commands
-                    INNER JOIN
-                target ON target.id = commands_on_host.fk_target
-                    INNER JOIN
-                `phase` ON `phase`.fk_commands_on_host = `commands_on_host`.`id`
-            WHERE
-                `phase`.`name` = 'execute'
-                    AND
-                `phase`.`state` = 'ready'
-                    AND
-                    '%s' BETWEEN commands.start_date AND commands.end_date limit %s;""" % (datenow,
-                                                                                           limitnbr);
-        selectedMachines = session.execute(sqlselect)
-        nb_machine_select_for_deploy_cycle = selectedMachines.rowcount
+        with Locker():
+            sqlselect="""
+            SELECT
+                    `commands`.`id` AS commands_id,
+                    `commands`.`title` AS commands_title,
+                    `commands`.`creator` AS commands_creator,
+                    `commands`.`package_id` AS commands_package_id,
+                    `commands`.`start_date` AS commands_start_date,
+                    `commands`.`end_date` AS commands_end_date,
+                    `commands_on_host`.`id` AS commands_on_host_id,
+                    `target`.`target_name` AS target_target_name,
+                    `target`.`target_uuid` AS target_target_uuid,
+                    `target`.`id_group` AS target_id_group,
+                    `target`.`target_macaddr` AS target_target_macaddr
+                FROM
+                    commands_on_host
+                        INNER JOIN
+                    commands ON commands.id = commands_on_host.fk_commands
+                        INNER JOIN
+                    target ON target.id = commands_on_host.fk_target
+                        INNER JOIN
+                    `phase` ON `phase`.fk_commands_on_host = `commands_on_host`.`id`
+                WHERE
+                    `phase`.`name` = 'execute'
+                        AND
+                    `phase`.`state` = 'ready'
+                        AND
+                        '%s' BETWEEN commands.start_date AND commands.end_date limit %s;""" % (datenow,
+                                                                                            limitnbr);
+            selectedMachines = session.execute(sqlselect)
+            nb_machine_select_for_deploy_cycle = selectedMachines.rowcount
 
-        if nb_machine_select_for_deploy_cycle == 0:
-            self.logger.debug("There is no deployment to process.")
-            return nb_machine_select_for_deploy_cycle, []
-        elif nb_machine_select_for_deploy_cycle == 1:
-            self.logger.debug("We will start a deployment on 1 computer")
-        else:
-            self.logger.debug("We will start a deployment on %s computers " % nb_machine_select_for_deploy_cycle)
-
-        machine_status_update = []
-        unique_deploy_on_machine = []
-        updatemachine = []
-
-        for msc_machine_to_deploy in selectedMachines:
-            machine_status_update.append(str(msc_machine_to_deploy.commands_on_host_id))
-            self.logger.debug("The computer %s (id: %s) is available to deployment the package %s" % (msc_machine_to_deploy.target_target_name,
-                                                                                                      msc_machine_to_deploy.target_target_uuid,
-                                                                                                      msc_machine_to_deploy.commands_package_id))
-            title = str(msc_machine_to_deploy.commands_title)
-            if title.startswith("Convergence on"):
-                self.logger.info("title '%s'" % title)
-                title ="%s %s" % (title, datestr)
-
-            if not msc_machine_to_deploy.target_target_uuid in unique_deploy_on_machine:
-                unique_deploy_on_machine.append(msc_machine_to_deploy.target_target_uuid)
-                updatemachine.append({'name': str(msc_machine_to_deploy.target_target_name)[:-1],
-                                      'pakkageid': str(msc_machine_to_deploy.commands_package_id),
-                                      'commandid':  msc_machine_to_deploy.commands_id,
-                                      'mac': str(msc_machine_to_deploy.target_target_macaddr),
-                                      'count': 0,
-                                      'cycle': 0,
-                                      'login': str(msc_machine_to_deploy.commands_creator),
-                                      'start_date': msc_machine_to_deploy.commands_start_date,
-                                      'end_date': msc_machine_to_deploy.commands_end_date,
-                                      'title': title,
-                                      'UUID': str(msc_machine_to_deploy.target_target_uuid),
-                                      'GUID': msc_machine_to_deploy.target_id_group})
-                self.logger.info("deploy on machine %s [%s] -> %s" % (msc_machine_to_deploy.target_target_name,
-                                                                      msc_machine_to_deploy.target_target_uuid,
-                                                                      msc_machine_to_deploy.commands_package_id))
+            if nb_machine_select_for_deploy_cycle == 0:
+                self.logger.debug("There is no deployment to process.")
+                return nb_machine_select_for_deploy_cycle, []
+            elif nb_machine_select_for_deploy_cycle == 1:
+                self.logger.debug("We will start a deployment on 1 computer")
             else:
-                self.logger.warn("Cancel of the deployment in process\n"\
-                                 "Deploy on machine %s [%s] -> %s" % (msc_machine_to_deploy.target_target_name,
-                                                                      msc_machine_to_deploy.target_target_uuid,
-                                                                      msc_machine_to_deploy.commands_package_id))
+                self.logger.debug("We will start a deployment on %s computers " % nb_machine_select_for_deploy_cycle)
 
-        # We immediatly update the status of the deployment in the msc table.
-        # It has for action to remove the lock on the table.
-        if machine_status_update:
-            list_uuid_machine = "," . join(machine_status_update)
-            sql ="""UPDATE `msc`.`commands_on_host`
-                        SET
-                           `current_state`='done',
-                            `stage`='ended'
-                        WHERE `commands_on_host`.`id` in(%s);
-                    UPDATE `msc`.`phase`
-                        SET
-                           `phase`.`state`='done'
-                        WHERE `phase`.`fk_commands_on_host` in(%s);
-            """ % (list_uuid_machine,
-                   list_uuid_machine);
-            ret = session.execute(sql)
-            self.logger.debug("update deployement %s" % ret.rowcount)
-        session.commit()
-        session.flush()
+            machine_status_update = []
+            unique_deploy_on_machine = []
+            updatemachine = []
+
+            for msc_machine_to_deploy in selectedMachines:
+                machine_status_update.append(str(msc_machine_to_deploy.commands_on_host_id))
+                self.logger.debug("The computer %s (id: %s) is available to deployment the package %s" % (msc_machine_to_deploy.target_target_name,
+                                                                                                        msc_machine_to_deploy.target_target_uuid,
+                                                                                                        msc_machine_to_deploy.commands_package_id))
+                title = str(msc_machine_to_deploy.commands_title)
+                if title.startswith("Convergence on"):
+                    self.logger.info("title '%s'" % title)
+                    title ="%s %s" % (title, datestr)
+
+                if not msc_machine_to_deploy.target_target_uuid in unique_deploy_on_machine:
+                    unique_deploy_on_machine.append(msc_machine_to_deploy.target_target_uuid)
+                    updatemachine.append({'name': str(msc_machine_to_deploy.target_target_name)[:-1],
+                                        'pakkageid': str(msc_machine_to_deploy.commands_package_id),
+                                        'commandid':  msc_machine_to_deploy.commands_id,
+                                        'mac': str(msc_machine_to_deploy.target_target_macaddr),
+                                        'count': 0,
+                                        'cycle': 0,
+                                        'login': str(msc_machine_to_deploy.commands_creator),
+                                        'start_date': msc_machine_to_deploy.commands_start_date,
+                                        'end_date': msc_machine_to_deploy.commands_end_date,
+                                        'title': title,
+                                        'UUID': str(msc_machine_to_deploy.target_target_uuid),
+                                        'GUID': msc_machine_to_deploy.target_id_group})
+                    self.logger.info("deploy on machine %s [%s] -> %s" % (msc_machine_to_deploy.target_target_name,
+                                                                        msc_machine_to_deploy.target_target_uuid,
+                                                                        msc_machine_to_deploy.commands_package_id))
+                else:
+                    self.logger.warn("Cancel of the deployment in process\n"\
+                                    "Deploy on machine %s [%s] -> %s" % (msc_machine_to_deploy.target_target_name,
+                                                                        msc_machine_to_deploy.target_target_uuid,
+                                                                        msc_machine_to_deploy.commands_package_id))
+
+            # We immediatly update the status of the deployment in the msc table.
+            # It has for action to remove the lock on the table.
+            if machine_status_update:
+                list_uuid_machine = "," . join(machine_status_update)
+                sql ="""UPDATE `msc`.`commands_on_host`
+                            SET
+                            `current_state`='done',
+                                `stage`='ended'
+                            WHERE `commands_on_host`.`id` in(%s);
+                        UPDATE `msc`.`phase`
+                            SET
+                            `phase`.`state`='done'
+                            WHERE `phase`.`fk_commands_on_host` in(%s);
+                """ % (list_uuid_machine,
+                    list_uuid_machine);
+                ret = session.execute(sql)
+                self.logger.debug("update deployement %s" % ret.rowcount)
+            session.commit()
+            session.flush()
         return nb_machine_select_for_deploy_cycle, updatemachine
 
     @DatabaseHelper._sessionm
