@@ -70,7 +70,7 @@ class Locker:
     def __enter__ (self):
         self.time_entrer = time.time()
         logger.debug("start wainting lock")
-        self.fp = open("./lockfile.lck","w+")
+        self.fp = open("/tmp/lockfile.lck","w+")
         fcntl.flock(self.fp.fileno(), fcntl.LOCK_EX)
         logger.debug("acquire jeton %s"%(time.time() - self.time_entrer))
 
