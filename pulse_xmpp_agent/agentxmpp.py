@@ -422,6 +422,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
                           120,
                           self.stabilized_start,
                           repeat=True)
+        self.schedule('subscription',
+                        120,
+                        self.subscribe_initialisation,
+                        repeat=False)
 
         self.reversessh = None
         self.reversesshmanage = {}
@@ -1491,20 +1495,25 @@ class MUCBot(sleekxmpp.ClientXMPP):
         self.manage_scheduler.process_on_event()
 
     def presence_subscribe(self, presence):
-        logger.info("**********   presence_subscribe %s %s"%(presence['from'],presence['type'] ))
+        if presence['from'].bare  !=  self.boundjid.bare:
+            logger.info("**********   presence_subscribe %s %s"%(presence['from'],presence['type'] ))
 
     def presence_subscribed(self, presence):
-        logger.info("**********   presence_subscribed %s %s"%(presence['from'],presence['type'] ))
+        if presence['from'].bare  !=  self.boundjid.bare:
+            logger.info("**********   presence_subscribed %s %s"%(presence['from'],presence['type'] ))
 
     def changed_subscription(self, presence):
+        if presence['from'].bare  !=  self.boundjid.bare:
         logger.info("**********   changed_subscription %s %s"%(presence['from'],presence['type'] ))
 
     def presence_unavailable(self, presence):
-        logger.info("**********   presence_unavailable %s %s"%(presence['from'],presence['type'] ))
+        if presence['from'].bare  !=  self.boundjid.bare:
+            logger.info("**********   presence_unavailable %s %s"%(presence['from'],presence['type'] ))
 
     def presence_available(self, presence):
-        logger.info("**********   presence_available %s %s"%(presence['from'],presence['type'] ))
-        self.unsubscribe_agent()
+        if presence['from'].bare  !=  self.boundjid.bare:
+            logger.info("**********   presence_available %s %s"%(presence['from'],presence['type'] ))
+            self.unsubscribe_agent()
 
     def presence_unsubscribe(self, presence):
         logger.info("**********   presence_unsubscribe %s %s"%(presence['from'],presence['type'] ))
@@ -1526,43 +1535,43 @@ class MUCBot(sleekxmpp.ClientXMPP):
             self.update_plugin()
 
     def unsubscribe_agent(self):
+        logger.info("CALL UNSUBSCRIBE AGENT")
         try:
-            keyroster = str(self.boundjid.bare)
-            if keyroster in self.roster:
-                for t in self.roster[keyroster]:
-                    if t == self.boundjid.bare or t in [self.sub_subscribe]:
-                        continue
-                    self.limit_message_presence_clean_substitute.append(t)
-                    self.send_presence ( pto = t, ptype = 'unsubscribe' )
-                    self.update_roster(t, subscription='remove')
+            for t in self.client_roster:
+                if t == self.boundjid.bare or t in [self.sub_subscribe]:
+                    continue
+                logger.info("unsubcribe agent %s" % t)
+                self.send_presence ( pto = t, ptype = 'unsubscribe' )
+                self.update_roster(t, subscription='remove')
         except Exception:
             logger.error("\n%s"%(traceback.format_exc()))
 
-    def unsubscribe_substitute_subscribe(self):
-        """
-        This function is used to unsubscribe the substitute subscribe
-        It sends a presence message with type "unsubscribe"
-        """
-        try:
-            keyroster = str(self.boundjid.bare)
-            for sub_subscribed in self.sub_subscribe_all:
-                if sub_subscribed == self.boundjid.bare or sub_subscribed == self.sub_subscribe:
-                    continue
-                if sub_subscribed not in  self.limit_message_presence_clean_substitute:
-                    self.send_presence (pto=sub_subscribed, ptype='unsubscribe')
-                    self.update_roster(sub_subscribed, subscription='remove')
-        except Exception:
-            logger.error("\n%s" % (traceback.format_exc()))
+
+    def subscribe_initialisation(self):
+        self.unsubscribe_agent()
+        logger.info("CLIENT ROSTER %s " % self.client_roster.keys())
+        logger.info("ROSTER %s " % self.roster)
+        self.xmpplog("%s roster is  %s" % (self.config.agenttype, self.sub_subscribe),
+                    type = 'info',
+                    sessionname = "",
+                    priority = -1,
+                    action = "xmpplog",
+                    who = self.boundjid.bare,
+                    how = "",
+                    why = "",
+                    date = None ,
+                    fromuser = self.boundjid.bare,
+                    touser = "")
 
     def start(self, event):
-        self.get_roster()
         self.send_presence()
-        logger.info("subscribe to %s agent" % self.sub_subscribe.user)
-        self.limit_message_presence_clean_substitute = []
+        logger.info("Subscribe %s" % self.sub_subscribe)
+        self.send_presence (pto=self.sub_subscribe, ptype='subscribe')
+        logger.info("get_roster")
+        self.get_roster()
+
         self.ipconnection = self.config.Server
         self.config.ipxmpp = getIpXmppInterface(self.config.Server, self.config.Port)
-        self.unsubscribe_agent()
-        self.unsubscribe_substitute_subscribe()
 
         self.send_presence (pto=self.sub_subscribe, ptype='subscribe')
         if  self.config.agenttype in ['relayserver']:
@@ -1574,9 +1583,8 @@ class MUCBot(sleekxmpp.ClientXMPP):
                 pass
 
         self.agentrelayserverrefdeploy = self.config.jidchatroomcommand.split('@')[0][3:]
-        logging.log(DEBUGPULSE,"Roster agent \n%s"%self.client_roster)
 
-        self.xmpplog("Starting %s agent" % self.config.agenttype,
+        self.xmpplog("Starting %s agent -> subscription agent is %s" % (self.config.agenttype, self.sub_subscribe),
                     type = 'info',
                     sessionname = "",
                     priority = -1,
