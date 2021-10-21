@@ -30,7 +30,6 @@ import logging
 import platform
 import traceback
 import hashlib
-import base64
 from optparse import OptionParser
 import os, subprocess
 import time
@@ -38,21 +37,21 @@ import json
 import shutil
 from datetime import datetime
 import psutil
-
+import urllib2
 import signal
-from subprocess import Popen
 
 if sys.platform.startswith('win'):
     import win32con
     import win32api
 
-if sys.version_info[0] == 3:
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser
 
 logger = logging.getLogger()
 # code exclusif for launcher
+
+
+DEBUGPULSE = 25
+filePath=os.path.dirname(os.path.realpath(__file__))
 
 def singletonclass(class_):
     instances = {}
@@ -150,16 +149,24 @@ class global_data_process:
     def start_process_agent(self, prog):
         if self.ProcessObj is None:
             self.cmd = prog
-            self.ProcessObj = subprocess.Popen( self.cmd,
-                                                stdout=None,
-                                                stderr=None,
-                                                stdin=None,
-                                                close_fds=True,
-                                                preexec_fn=os.setpgrp)
+            if sys.platform.startswith('win'):
+                self.ProcessObj = subprocess.Popen( self.cmd,
+                                                    stdout=None,
+                                                    stderr=None,
+                                                    stdin=None,
+                                                    close_fds=True)
+            else:
+                self.ProcessObj = subprocess.Popen( self.cmd,
+                                                    stdout=None,
+                                                    stderr=None,
+                                                    stdin=None,
+                                                    close_fds=True,
+                                                    preexec_fn=os.setpgrp)
             self.PIDagent = self.ProcessObj.pid
             time.sleep(1)
             self.load_child_process()
             self.display_Process()
+
 
     def display_Process(self):
         try:
@@ -780,10 +787,6 @@ def file_get_contents(filename,
             return ret
         finally:
             fp.close()
-
-def createfingerprintconf(typeconf):
-    namefileconfig = conffilename(typeconf)
-    return hashlib.md5(file_get_contents(namefileconfig)).hexdigest()
 
 def refreshfingerprintconf(typeconf):
     fp = createfingerprintconf(typeconf)
