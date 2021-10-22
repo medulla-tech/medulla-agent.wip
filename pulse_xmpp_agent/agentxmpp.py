@@ -2005,7 +2005,18 @@ class MUCBot(sleekxmpp.ClientXMPP):
             md5ctl = createfingerprintnetwork()
             force_reconfiguration = os.path.join(os.path.dirname(os.path.realpath(__file__)), "action_force_reconfiguration")
             if self.md5reseau != md5ctl or os.path.isfile(force_reconfiguration):
+
+                #self.objectxmpp.md5reseau="alwaysnetreconfTRUE"
+
                 self.force_full_registration()
+
+
+                if self.md5reseau == "alwaysnetreconfTRUE":
+                    # le parametre alwaysnetreconf is true on fait dans tous les cas 1 reconf
+                    logging.log(DEBUGPULSE, "AGENT MACHINE RECONF ON RESEAU CHANG")
+                    self.md5reseau = refreshfingerprint()
+                    self.reconfagent()
+                    return
                 # il y a 1 changement dans le reseau
                 # on verify si on connecte
                 if self.state.ensure('connected'):

@@ -398,6 +398,7 @@ class manage_kiosk_message:
                     if self.objectxmpp.config.alwaysnetreconf:
                         # politique reconfiguration sur chaque changement de network.
                         self.logger.warning("No network interface can replace the previous one. Agent reconfiguration needed to resume the service.")
+                        self.objectxmpp.md5reseau="alwaysnetreconfTRUE"
                         self.objectxmpp.networkMonitor()
                         return
 
