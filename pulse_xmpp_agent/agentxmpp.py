@@ -2856,7 +2856,7 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
             # list python process
             lpidsearch=[]
             for k, v in dd.get_pid().iteritems():
-                if "python.exe" in v:
+                if "agent_pulse" in v:
                     lpidsearch.append(int(k))
             logging.debug("Process python list : %s"%lpidsearch)
             for pr in processes:
@@ -2866,8 +2866,9 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
                     for p in processes:
                         p.terminate()
                     logging.debug("END PROGRAMM")
-                    cmd = "taskkill /F /PID %s" % os.getpid()
-                    result = simplecommand(cmd)
+                    kill_proc_tree(os.getpid())
+                    #cmd = "taskkill /F /PID %s" % os.getpid()
+                    #result = simplecommand(cmd)
                     break
     else:
         # completing process
@@ -2881,6 +2882,16 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
             logging.error("TERMINATE PROGRAMM ON ERROR : %s"%str(e))
     logging.debug("END PROGRAMM")
     sys.exit(0)
+
+def kill_proc_tree(pid, including_parent=True):
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    for child in children:
+        child.kill()
+    gone, still_alive = psutil.wait_procs(children, timeout=5)
+    if including_parent:
+        parent.kill()
+        parent.wait(5)
 
 class process_xmpp_agent():
 
