@@ -470,7 +470,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
             self.geodata = geolocalisation_agent(typeuser = self.config.request_type,
                                                 geolocalisation=self.config.geolocalisation,
                                                 ip_public=self.config.public_ip,
-                                                strlistgeoserveur=self.config.geoservers    )
+                                                strlistgeoserveur=self.config.geoserversstr)
 
             self.config.public_ip = self.geodata.get_ip_public()
         if self.config.public_ip == "" or self.config.public_ip == None:

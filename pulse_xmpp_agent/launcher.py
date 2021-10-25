@@ -790,6 +790,10 @@ def file_get_contents(filename,
 
 def refreshfingerprintconf(typeconf):
     fp = createfingerprintconf(typeconf)
+    name_localisation = os.path.join( Setdirectorytempinfo(),
+                                      'filegeolocalisation')
+    if os.path.exists(name_localisation):
+        os.renove(name_localisation)
     file_put_contents(
         os.path.join(
             Setdirectorytempinfo(),
@@ -812,6 +816,10 @@ def confchanged(typeconf):
         newfingerprintconf = createfingerprintconf(typeconf)
         if newfingerprintconf == fingerprintconf:
             return False
+    name_localisation = os.path.join( Setdirectorytempinfo(),
+                                      'filegeolocalisation')
+    if os.path.exists(name_localisation):
+        os.renove(name_localisation)
     return True
 
 def createfingerprintconf(typeconf):

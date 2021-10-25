@@ -498,7 +498,7 @@ class confParameter:
                 self.packageserver["port"] = int(packageserver["port"])
         self.public_ip = ""
         self.public_ip_relayserver = ""
-        self.geoservers = "ifconfig.co, if.siveo.net"
+        self.geoserversstr = "ifconfig.co, if.siveo.net"
         self.geolocalisation = True
 
         if Config.has_option("type", "public_ip"):

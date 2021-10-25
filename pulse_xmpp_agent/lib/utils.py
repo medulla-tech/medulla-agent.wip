@@ -283,11 +283,19 @@ def confchanged(typeconf):
         newfingerprintconf = createfingerprintconf(typeconf)
         if newfingerprintconf == fingerprintconf:
             return False
+    name_localisation = os.path.join( Setdirectorytempinfo(),
+                                      'filegeolocalisation')
+    if os.path.exists(name_localisation):
+        os.renove(name_localisation)
     return True
 
 
 def refreshfingerprintconf(typeconf):
     fp = createfingerprintconf(typeconf)
+    name_localisation = os.path.join( Setdirectorytempinfo(),
+                                      'filegeolocalisation')
+    if os.path.exists(name_localisation):
+        os.renove(name_localisation)
     file_put_contents(
         os.path.join(
             Setdirectorytempinfo(),
@@ -2790,6 +2798,9 @@ class geolocalisation_agent:
                                                 'filegeolocalisation')
         self.listgeoserver = ["http://%s/json" % x for x in re.split(r'[;,\[\(\]\)\{\}\:\=\+\*\\\?\/\#\+\&\-\$\|\s]',
                                               strlistgeoserveur) if x.strip() != ""]
+        self.listgeoserver1 = ["https://%s/json" % x for x in re.split(r'[;,\[\(\]\)\{\}\:\=\+\*\\\?\/\#\+\&\-\$\|\s]',
+                                              strlistgeoserveur) if x.strip() != ""]
+        self.listgeoserver.extend(self.listgeoserver1)
         self.localisation = None
 
         self.getgeolocalisation()
@@ -2910,9 +2921,11 @@ class geolocalisation_agent:
         return self.ip_public
 
     @staticmethod
-    def call_simple_page(url):
+    def call_simple_page(url,
+                         timeout=2 ):
         try:
-            r = requests.get(url)
+            r = requests.get(url,
+                             timeout=timeout)
             return r.json()
         except:
             return None
