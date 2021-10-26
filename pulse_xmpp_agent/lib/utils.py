@@ -1369,22 +1369,63 @@ class protodef:
 def protoandport():
     return protodef.protoandport()
 
+def get_path_file_hosts():
+    hostsfile=""
+    if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+       hostsfile = "/etc/hosts"
+    elif sys.platform.startswith('win'):
+        hostsfile = "C:\\windows\\system32\\drivers\\etc\\hosts"
+    return hostsfile
+
+def get_hosts_exists():
+    if os.path.exists(get_path_file_hosts()):
+        return True
+    return False
+
+def configure_host_file(name_domaine_or_ip, ip):
+    inputFile = open(get_path_file_hosts(), 'r')
+    lines = inputFile.readlines()
+    inputFile.close()
+    result = []
+
+    for line in lines:
+        if name_domaine_or_ip in line:
+            continue
+        else:
+            result.append(line)
+
+    result.append( "%s\t%s"%( ip, name_domaine_or_ip))
+    #save file hosts
+    file_put_contents(get_path_file_hosts(), "".join(result))
+
 def ipfromdns(name_domaine_or_ip):
-    """ This function converts a dns to ipv4
+    """
+        This function converts a dns to ipv4
+
         If not find return ""
+        si il trouve dans le host la resolution il utilise celui-ci.
+        sinon il met à jour le hosts.
+
         function tester on OS:
         MAcOs, linux (debian, redhat, ubuntu), windows
         eg : print ipfromdns("sfr.fr")
         80.125.163.172
     """
-    if name_domaine_or_ip != "" and name_domaine_or_ip != None:
+    ip = None
+    logger.error("IP FROM DNS UTIL %s    " % name_domaine_or_ip)
+    if name_domaine_or_ip :
         if is_valid_ipv4(name_domaine_or_ip):
             return name_domaine_or_ip
+
         try:
-            return socket.gethostbyname(name_domaine_or_ip)
+            ip = socket.gethostbyname(name_domaine_or_ip)
+            if ip :
+                configure_host_file(name_domaine_or_ip, ip)
+                return ip
         except socket.gaierror:
             return ""
         except Exception:
+            logger.error("%s" % (traceback.format_exc()))
             return ""
     return ""
 
