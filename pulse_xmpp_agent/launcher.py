@@ -43,7 +43,7 @@ import signal
 
 if sys.platform.startswith('win'):
     import win32con
-    import win32ap
+    import win32api
 
 from ConfigParser import ConfigParser
 
@@ -69,6 +69,7 @@ class global_data_process:
         self.cmd = ""
         self.pid_child = []
         self.terminate_process = False
+        self.pid_schilds=[]
 
     def load_child_process(self):
         """
@@ -180,7 +181,7 @@ class global_data_process:
                 strpid="PID agent %s" % (self.PIDagent)
                 logger.debug(strpid)
                 logstring = "\\_ -Launcher\n    \\_ -%s" % self.PIDagent
-                for childpid in self.pid_child:
+                for childpid in self.pid_childs:
                     logstring = logstring + "\n\t\\_ -%s" % childpid
                 logger.debug("\n%s" % logstring)
             else:
@@ -1207,22 +1208,22 @@ if __name__ == '__main__':
                         except:
                             logger.error("\n%s" % (traceback.format_exc()))
                     else:
-                    logger.debug('l agent a 1 soucis (start pas encore stabilisé)')
-                    # We stop the agent.
-                    ProcessData.stop_process_agent()
-                    logger.debug('We reinstall the agent thanks to the rescue image')
-                    ret=install_rescue_image().reinstall_agent_rescue
-                    logger.debug('We start a reconfiguration')
-                    if opts.typemachine.lower() in ["machine"]:
-                        start_agent(pathagent,
-                                    agent="connection",
-                                    console=opts.consoledebug)
-                    # We could start the rescue agent with specific actions
-                    # Even if the agent is not in a good state.
-                    # Not yet implemented.
+                        logger.debug('l agent a 1 soucis (start pas encore stabilisé)')
+                        # We stop the agent.
+                        ProcessData.stop_process_agent()
+                        logger.debug('We reinstall the agent thanks to the rescue image')
+                        ret=install_rescue_image().reinstall_agent_rescue
+                        logger.debug('We start a reconfiguration')
+                        if opts.typemachine.lower() in ["machine"]:
+                            start_agent(pathagent,
+                                        agent="connection",
+                                        console=opts.consoledebug)
+                        # We could start the rescue agent with specific actions
+                        # Even if the agent is not in a good state.
+                        # Not yet implemented.
 
-                    logger.debug("We restart the Agent")
-                    start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
+                        logger.debug("We restart the Agent")
+                        start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
             else:
                 pass
         except:
