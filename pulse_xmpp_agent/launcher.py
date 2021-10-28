@@ -69,7 +69,7 @@ class global_data_process:
         self.cmd = ""
         self.pid_child = []
         self.terminate_process = False
-        self.pid_children=[]
+        self.pid_children = []
 
     def load_child_process(self):
         """
