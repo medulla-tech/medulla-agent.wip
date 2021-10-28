@@ -69,7 +69,7 @@ class global_data_process:
         self.cmd = ""
         self.pid_child = []
         self.terminate_process = False
-        self.pid_schilds=[]
+        self.pid_children=[]
 
     def load_child_process(self):
         """
@@ -84,15 +84,15 @@ class global_data_process:
             children = parent.children(recursive=True)
             for child in children:
                 listpid.append(child.pid)
-            self.pid_schilds.extend(listpid)
-            self.pid_schilds = list(set(self.pid_schilds))
+            self.pid_children.extend(listpid)
+            self.pid_children = list(set(self.pid_children))
         list_defunct=[]
-        for pid_child in self.pid_schilds:
+        for pid_child in self.pid_children:
             if not psutil.pid_exists(pid_child):
                 list_defunct.append(pid_child)
         for pid_defunct in list_defunct:
             try:
-                self.pid_schilds.remove(pid_defunct)
+                self.pid_children.remove(pid_defunct)
             except ValueError:
                 pass
 
@@ -105,7 +105,7 @@ class global_data_process:
                 It returns True if the process exists.
                            False otherwise.
         """
-        for pid_child in self.pid_schilds:
+        for pid_child in self.pid_children:
             if psutil.pid_exists(pid_child):
                 return True
             return False
@@ -152,7 +152,7 @@ class global_data_process:
                         pass
                     self.PIDagent=0
                     self.ProcessObj = None
-                    self.pid_schilds=[]
+                    self.pid_children = []
         self.display_Process()
     def start_process_agent(self, prog):
         if self.ProcessObj is None:
@@ -181,7 +181,7 @@ class global_data_process:
                 strpid="PID agent %s" % (self.PIDagent)
                 logger.debug(strpid)
                 logstring = "\\_ -Launcher\n    \\_ -%s" % self.PIDagent
-                for childpid in self.pid_childs:
+                for childpid in self.pid_child:
                     logstring = logstring + "\n\t\\_ -%s" % childpid
                 logger.debug("\n%s" % logstring)
             else:
