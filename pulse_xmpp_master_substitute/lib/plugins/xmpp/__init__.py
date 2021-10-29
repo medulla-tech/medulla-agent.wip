@@ -26,7 +26,7 @@ xmppmaster database handler
 """
 
 # SqlAlchemy
-from sqlalchemy import create_engine, MetaData, select, func, and_, desc, or_, distinct, not_
+from sqlalchemy import create_engine, MetaData, select, func, and_, desc, or_, distinct, not_, exists
 from sqlalchemy.orm import sessionmaker, Query
 from sqlalchemy.exc import DBAPIError, NoSuchTableError, IntegrityError
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
@@ -1225,6 +1225,32 @@ class XmppMasterDatabase(DatabaseHelper):
         try:
             entity_id_xmpp = None if entity_id_xmpp in ["NULL", ""] else entity_id_xmpp
             location_id_xmpp = None if location_id_xmpp in ["NULL",""] else location_id_xmpp
+
+
+            result =  session.query(Machines.id,Machines.hostname,Machines.jid, Machines.uuid_inventorymachine).\
+                                filter( Machines.uuid_inventorymachine == uuid_inventory).all()
+            if result:
+                # on met a null les uuidinventory
+                logging.getLogger().error("result : %s" % result)
+                for mach in result:
+                    msg="Bad GLPI ID (%s) for the machine : %s (jid %s,id %s)." \
+                        "It will be reconfigured."%(uuid_inventory,
+                                                    mach.hostname,
+                                                    mach.jid,
+                                                    mach.id)
+                    logging.getLogger().warning(msg)
+            session.commit()
+            obj = { Machines.uuid_inventorymachine : None,
+                    Machines.glpi_description :  "",
+                    Machines.glpi_entity_id :1,
+                    Machines.glpi_location_id : None,
+                    Machines.glpi_owner :"",
+                    Machines.glpi_owner_firstname :"",
+                    Machines.glpi_owner_realname : "",
+                    Machines.glpi_entity_id : 1,
+                    Machines.need_reconf : 1}
+            result = session.query(Machines).filter( Machines.uuid_inventorymachine == uuid_inventory).update( obj)
+            session.commit()
             obj = { Machines.uuid_inventorymachine : uuid_inventory ,
                               Machines.glpi_description : description_machine,
                               Machines.glpi_owner_firstname : owner_firstname,
@@ -1238,9 +1264,13 @@ class XmppMasterDatabase(DatabaseHelper):
             session.commit()
             session.flush()
             return 1
-        except Exception, e:
-            logging.getLogger().debug("updateMachines error %s->" % str(e))
+        except IntegrityError as e:
+            logging.getLogger().error("itegrity updateGLPI_information_machine : %s" % traceback.format_exc())
             return -1
+        except Exception, e:
+            logging.getLogger().error("updateGLPI_information_machine : %s" % traceback.format_exc())
+            return -1
+
 
     @DatabaseHelper._sessionm
     def updateName_Qa_custom_command(self,
@@ -1582,9 +1612,10 @@ class XmppMasterDatabase(DatabaseHelper):
                            manufacturer="",
                            glpi_entity_id=1,
                            glpi_location_id=None):
-
-        if uuid_inventorymachine is None:
-            uuid_inventorymachine = ""
+        if uuid_inventorymachine == "":
+            uuid_inventorymachine = None
+        #if uuid_inventorymachine is None:
+            #uuid_inventorymachine = ""
         msg ="Create Machine"
         pe = -1
         if uuid_serial_machine != "":
@@ -4438,10 +4469,19 @@ class XmppMasterDatabase(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def getUuidFromJid(self, session, jid):
-        """ return machine uuid for JID """
-        uuid_inventorymachine = session.query(Machines).filter_by(jid=jid).first().uuid_inventorymachine
-        if uuid_inventorymachine:
-            return uuid_inventorymachine.strip('UUID')
+        """
+            This function return the UUID based on the jid
+
+            Args:
+                session:    The sqlalchemy session
+                jid:        The jid of the machine we want to determine the UUID
+
+            Returns:
+                It returns the UUID based on the jid if exist, False otherwise
+        """
+        query = session.query(Machines.uuid_inventorymachine).filter_by(jid=jid).first()
+        if query:
+            return query.uuid_inventorymachine.strip('UUID')
         else:
             return False
 
@@ -5032,6 +5072,7 @@ class XmppMasterDatabase(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def getjidMachinefromuuid(self, session, uuid):
+        if uuid is None or uuid.strip() == "": return ""
         try:
             sql = """SELECT
                         jid
@@ -5087,10 +5128,12 @@ class XmppMasterDatabase(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def getPresenceuuidenabled(self, session, uuid, enabled = 0):
+        if uuid is None or uuid == "": return False
         return session.query(exists().where (and_(Machines.uuid_inventorymachine == uuid,
                                               Machines.enabled == enabled))).scalar()
     @DatabaseHelper._sessionm
     def getPresenceuuid(self, session, uuid):
+        if uuid is None or uuid == "": return False
         machinespresente = session.query(Machines.uuid_inventorymachine).\
             filter(and_(Machines.uuid_inventorymachine == uuid,
                         Machines.enabled == '1')).first()
@@ -5102,8 +5145,11 @@ class XmppMasterDatabase(DatabaseHelper):
 
     @DatabaseHelper._sessionm
     def getPresenceuuids(self, session, uuids):
+        if uuids == None : return {}
         if isinstance(uuids, basestring):
+            if uuids.strip() == "" : return {}
             uuids=[uuids]
+            uuids=[x.strip() for x in uuids if x.strip() != "" or x is not None]
         result = { }
         for uuidmachine in uuids:
             result[uuidmachine] = False
@@ -5127,8 +5173,11 @@ class XmppMasterDatabase(DatabaseHelper):
         Return: This fonction return a dictionnary:
                 {'UUID_GLPI': [presence of the machine, initialised glpi uuid]}
         """
+        if uuids == None : return {}
         if isinstance(uuids, basestring):
+            if uuids.strip() == "" : return {}
             uuids = [uuids]
+            uuids=[x.strip() for x in uuids if x.strip() != ""]
         result = { }
         for uuidmachine in uuids:
             result[uuidmachine] = [0,0]
@@ -5141,7 +5190,6 @@ class XmppMasterDatabase(DatabaseHelper):
             if linemachine.enabled is True:
                 out = 1
             result[linemachine.uuid_inventorymachine] = [out, 1]
-
         return result
 
     @DatabaseHelper._sessionm
@@ -5156,6 +5204,8 @@ class XmppMasterDatabase(DatabaseHelper):
         Return:
            It returns None if it failed to update the machine uuid_inventorymachine.
         """
+        if uuid is None or uuid.strip() == "":
+            uuid="NULL"
         try:
             sql = """UPDATE `xmppmaster`.`machines`
                     SET
@@ -5278,14 +5328,23 @@ class XmppMasterDatabase(DatabaseHelper):
             return []
 
     @DatabaseHelper._sessionm
-    def getlistPresenceMachineid(self, session, format=False):
+    def getlistPresenceMachineid(self,
+                                 session,
+                                 enabled=1,
+                                 agenttype='machine'):
         sql = """SELECT
                     uuid_inventorymachine
                  FROM
                     xmppmaster.machines
                  WHERE
-                    enabled = '1' and
-                    agenttype = 'machine' and uuid_inventorymachine IS NOT NULL AND uuid_inventorymachine!='';"""
+                    enabled = %s
+                        AND
+                    agenttype = '%s'
+                        AND
+                    uuid_inventorymachine IS NOT NULL
+                        AND
+                    uuid_inventorymachine != '';"""%(enabled,
+                                                     agenttype)
 
         presencelist = session.execute(sql)
         session.commit()
@@ -5299,7 +5358,10 @@ class XmppMasterDatabase(DatabaseHelper):
             return a
 
     @DatabaseHelper._sessionm
-    def getidlistPresenceMachine(self, session, presence=None):
+    def getidlistPresenceMachine(self,
+                                 session,
+                                 presence=None,
+                                 agenttype='machine'):
         """
         This function is used to retrieve the list of the machines based on the 'presence' argument.
 
@@ -5314,7 +5376,7 @@ class XmppMasterDatabase(DatabaseHelper):
         strpresence = ""
         try:
             if presence is not None:
-                if presence == True:
+                if presence == True or presence == 1:
                     strpresence = " and enabled = 1"
                 else:
                     strpresence = " and enabled = 0"
@@ -5323,9 +5385,10 @@ class XmppMasterDatabase(DatabaseHelper):
                     FROM
                         xmppmaster.machines
                     WHERE
-                        agenttype = 'machine'
+                        agenttype = '%s'
                     and
-                        uuid_inventorymachine IS NOT NULL %s;"""%strpresence
+                        uuid_inventorymachine IS NOT NULL %s;"""%(agenttype,
+                                                                  strpresence)
             presencelist = session.execute(sql)
             session.commit()
             session.flush()
@@ -5343,11 +5406,13 @@ class XmppMasterDatabase(DatabaseHelper):
         fl = listqueryxmppmaster[3].replace('*',"%")
         if listqueryxmppmaster[2] == "ou user":
             machineid = session.query(Machines.uuid_inventorymachine).\
-                filter( Machines.uuid_inventorymachine.isnot(None))
+                filter( or_(Machines.uuid_inventorymachine.isnot(None),
+                            Machines.uuid_inventorymachine.strip() != ""))
             machineid = machineid.filter(Machines.ad_ou_user.like(fl))
         elif listqueryxmppmaster[2] == "ou machine":
             machineid = session.query(Machines.uuid_inventorymachine).\
-                filter( Machines.uuid_inventorymachine.isnot(None))
+                filter( or_(Machines.uuid_inventorymachine.isnot(None),
+                            Machines.uuid_inventorymachine.strip() != ""))
             machineid = machineid.filter(Machines.ad_ou_machine.like(fl))
         elif listqueryxmppmaster[2] == "online computer":
             d = XmppMasterDatabase().getlistPresenceMachineid()
@@ -5592,7 +5657,7 @@ class XmppMasterDatabase(DatabaseHelper):
             It return machines with dupplicate UUIDs.
             We can search for enabled/disabled or all machines.
         """
-
+        if uuid is None or uuid.strip() == "" : return []
         try:
             querymachine = session.query(Machines)
             if enable == None:
@@ -5633,7 +5698,7 @@ class XmppMasterDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def getGuacamoleRelayServerMachineUuid(self, session, uuid, enable=1):
         result = {"error": "noresult",
-                  "uuid": uuid,
+                  "uuid": "",
                   "jid": "",
                   "groupdeploy": "",
                   "urlguacamole": "",
@@ -5647,6 +5712,7 @@ class XmppMasterDatabase(DatabaseHelper):
                   "agenttype": "",
                   "keysyncthing":  "",
                   "enabled": enable}
+        if uuid is None or uuid.strip() == "" : return result
         try:
             querymachine = session.query(Machines)
             if enable == None:
@@ -5964,6 +6030,7 @@ class XmppMasterDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def getMachinefromuuid(self, session, uuid):
         """ information machine"""
+        if uuid is None or uuid.strip() == "" : return {}
         machine = session.query(Machines).filter(Machines.uuid_inventorymachine == uuid).first()
         session.commit()
         session.flush()
