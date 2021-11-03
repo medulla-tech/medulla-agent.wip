@@ -6250,33 +6250,58 @@ class XmppMasterDatabase(DatabaseHelper):
     @DatabaseHelper._sessionm
     def substituteinfo(self, session, listconfsubstitute, arsname):
         """
-            search  subtitute agent jid for agent machine
+           cette fonction crée les listes ordonnée de substitut pour configure les machines.
+           pour assure le load balancing sur les différents substituts elle utilise la somme totale de chaque substitut. et attribut celui le moin utilise.
+           Elle tient compte des ars associe au substitut.
+           Si la machine a 1 ars, les substitut agrege au ars sont participant.
         """
         try:
             exclud = 'master@pulse'
 
             incrementeiscount=[]
-            for t in listconfsubstitute['conflist']:
-                result = session.query(Substituteconf.id.label("id"),
-                                       Substituteconf.jidsubtitute.label("jidsubtitute"),
-                                       Substituteconf.countsub.label("countsub"),
-                                       RelayServer.jid.label("namerelayser")).\
-                    join(RelayServer, Substituteconf.relayserver_id == RelayServer.id).\
-                        filter( and_(not_(Substituteconf.jidsubtitute.like(exclud)),
-                                    Substituteconf.type.like(t),
-                                    RelayServer.jid == arsname)).order_by(Substituteconf.countsub).all()
-                listcommand = []
-                test = False
-                for y in result:
-                    listcommand.append(y.jidsubtitute)
-                    if not test:
-                        test = True
-                        incrementeiscount.append(str(y.id))
-                        # y.countsub = y.countsub + 1
-                # session.commit()
-                # session.flush()
-                listcommand.append(exclud)
-                listconfsubstitute[t] = listcommand
+            for substituteinfo in listconfsubstitute['conflist']:
+                try:
+                    sql="""SELECT
+                                substituteconf.id AS id,
+                                substituteconf.jidsubtitute AS jidsubtitute,
+                                substituteconf.countsub AS countsub,
+                                substituteconf.type AS type,
+                                relayserver.jid AS namerelayser,
+                                SUM(substituteconf.countsub) AS totsub
+                            FROM
+                                substituteconf
+                                    JOIN
+                                relayserver ON substituteconf.relayserver_id = relayserver.id
+                            WHERE
+                                substituteconf.jidsubtitute NOT LIKE '%s'
+                                    AND substituteconf.type LIKE '%s'
+                                    AND (substituteconf.jidsubtitute IN (SELECT
+                                        substituteconf.jidsubtitute
+                                    FROM
+                                        substituteconf
+                                    WHERE
+                                        substituteconf.relayserver_id = (SELECT
+                                                id
+                                            FROM
+                                                relayserver
+                                            WHERE
+                                                relayserver.jid LIKE '%s')))
+                            GROUP BY substituteconf.jidsubtitute
+                            ORDER BY totsub;
+                            ;"""%(exclud,substituteinfo, arsname )
+                    resultproxy = session.execute(sql)
+                    listcommand = []
+                    infsub = [  { "id":x[0], "sub" : x[1] , "totalcount" : int(x[5])} for x in resultproxy ]
+                    self.logger.debug("%s -> %s" % (substituteinfo ,infsub))
+                    if infsub:
+                        incrementeiscount.append(str(infsub[0]['id']))
+                    for t in infsub:
+                        listcommand.append(t['sub'])
+                    listcommand.append(exclud)
+                    listconfsubstitute[substituteinfo] = listcommand
+                except Exception as e:
+                    self.logger.error("\n%s" % (traceback.format_exc()))
+
             if len(incrementeiscount) != 0:
                 #update contsub
                 sql="""UPDATE `xmppmaster`.`substituteconf`
@@ -6286,9 +6311,9 @@ class XmppMasterDatabase(DatabaseHelper):
                         `id` IN (%s);""" % ','.join([x for x in incrementeiscount])
                 result = session.execute(sql)
                 session.commit()
-                session.flush()
         except Exception, e:
             logging.getLogger().error("substituteinfo : %s" % str(e))
+        logging.getLogger().debug("substitute list : %s" %listconfsubstitute)
         return listconfsubstitute
 
     @DatabaseHelper._sessionm
