@@ -329,6 +329,31 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error(str(e))
 
     @DatabaseHelper._sessionm
+    def update_count_subscription(self,
+                                  session,
+                                  agentsubtitutename,
+                                  countroster):
+        logging.getLogger().debug("update_count_subscription %s" % agentsubtitutename)
+        try:
+            result = session.query(Substituteconf).filter(Substituteconf.jidsubtitute == agentsubtitutename).all()
+            first_valeur=True
+            for t in result:
+                logging.getLogger().debug("countsub %s->%s ars %s" % (t.countsub,
+                                                                      t.jidsubtitute,
+                                                                      t.relayserver_id))
+                if first_valeur:
+                    first_valeur = False
+                    t.countsub = countroster
+                else:
+                    t.countsub = 0
+            session.commit()
+            session.flush()
+            return True
+        except Exception, e:
+            logging.getLogger().error("update_count_subscription %s" % str(e))
+            return False
+
+    @DatabaseHelper._sessionm
     def update_enable_for_agent_subscription(self,
                                              session,
                                              agentsubtitutename,

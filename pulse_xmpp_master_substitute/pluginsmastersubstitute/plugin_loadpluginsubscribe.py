@@ -31,7 +31,8 @@ from lib.plugins.xmpp import XmppMasterDatabase
 import os
 import time
 
-from lib.utils import file_put_contents
+import subprocess
+from lib.utils import file_put_contents, simplecommandstr
 import ConfigParser
 try:
     from lib.stat import statcallplugin
@@ -44,7 +45,7 @@ DEBUGPULSEPLUGIN = 25
 
 # this plugin calling to starting agent
 
-plugin = {"VERSION": "1.11", "NAME": "loadpluginsubscribe", "TYPE": "substitute"}
+plugin = {"VERSION": "1.12", "NAME": "loadpluginsubscribe", "TYPE": "substitute"}
 
 def action( objectxmpp, action, sessionid, data, msg, dataerreur):
     logger.debug("=====================================================")
@@ -57,9 +58,23 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
             objectxmpp.stat_subcription_agent = statcallplugin(objectxmpp,
                                                             plugin['NAME'])
         read_conf_load_plugin_subscribe(objectxmpp)
+
+        objectxmpp.changed_status = types.MethodType(changed_status, objectxmpp)
         objectxmpp.add_event_handler('changed_status', objectxmpp.changed_status)
 
         XmppMasterDatabase().update_enable_for_agent_subscription(objectxmpp.boundjid.bare)  # update down machine substitute manage by self agent
+
+
+        # add function clean_roster et synchro_count_substitut
+        objectxmpp.synchro_count_substitut = types.MethodType(synchro_count_substitut,
+                                                              objectxmpp)
+        objectxmpp.clean_roster = types.MethodType(clean_roster,
+                                                   objectxmpp)
+
+        objectxmpp.schedule('clean_roster',
+                            60,
+                            objectxmpp.clean_roster,
+                            repeat=True)
 
         # self.add_event_handler('presence_unavailable', objectxmpp.presence_unavailable)
         # self.add_event_handler('presence_available', objectxmpp.presence_available)
@@ -72,14 +87,40 @@ def action( objectxmpp, action, sessionid, data, msg, dataerreur):
 
         # self.add_event_handler('changed_subscription', objectxmpp.changed_subscription)
 
+def clean_roster(self):
+    """
+        delete master@pulse du rosters
+        supprime toutes les machines deactive dans le roster (none none)
+        compte le nombre de roster par ars.
+    """
+    try:
+        cmd=["ejabberdctl process_rosteritems delete any any %s master@pulse"%self.boundjid.bare,
+                "ejabberdctl process_rosteritems delete none:to none %s any"%str(self.boundjid.bare)]
+        for command in cmd:
+            logger.debug("command %s"%command)
+            simplecommandstr(command)
+    except Exception:
+        logger.error("\n%s" % (traceback.format_exc()))
+    self.synchro_count_substitut()
+
+def synchro_count_substitut(self):
+    try:
+        cmd="ejabberdctl get_roster %s %s | wc -l"%(str(self.boundjid.user),
+                                                    str(self.boundjid.domain))
+        result = simplecommandstr(str(cmd))
+        cardinal_roster = int(result['result'].strip()) if result else 0
+        logger.debug("roster number (%s) %s"%(cardinal_roster,
+                                              str(self.boundjid.user)))
+        XmppMasterDatabase().update_count_subscription(self.boundjid.bare,
+                                                       cardinal_roster)
+    except Exception:
+        logger.error("\n%s" % (traceback.format_exc()))
 
 def read_conf_load_plugin_subscribe(objectxmpp):
     """
         It reads the configuration plugin
         The folder where the configuration file must be is in the objectxmpp.config.pathdirconffile variable.
     """
-    objectxmpp.changed_status = types.MethodType(changed_status, objectxmpp)
-   
     namefichierconf = plugin['NAME'] + ".ini"
     objectxmpp.pathfileconf = os.path.join( objectxmpp.config.pathdirconffile, namefichierconf)
     if not os.path.isfile(objectxmpp.pathfileconf):
@@ -96,7 +137,7 @@ def read_conf_load_plugin_subscribe(objectxmpp):
         if os.path.exists(objectxmpp.pathfileconf + ".local"):
             Config.read(objectxmpp.pathfileconf + ".local")
         if Config.has_section("parameters"):
-           
+
             if statfuncton:
                 objectxmpp.stat_subcription_agent.load_param_lap_time_stat_(Config)
                 objectxmpp.stat_subcription_agent.display_param_config("CONFIG")
