@@ -81,6 +81,7 @@ from multiprocessing import Queue, Process, Event
 from multiprocessing.managers import SyncManager
 import multiprocessing
 from modulefinder import ModuleFinder
+from datetime import datetime
 
 from sleekxmpp.xmlstream import handler, matcher
 from sleekxmpp.exceptions import IqError, IqTimeout
@@ -618,9 +619,9 @@ class MUCBot(sleekxmpp.ClientXMPP):
                                                   "INFOSTMP")
         BOOL_FILE_CONTROL_WATCH_DOG = os.path.join(directory_file,
                                                    "BOOL_FILE_CONTROL_WATCH_DOG")
-
-        file_put_contents(BOOL_FILE_CONTROL_WATCH_DOG,
-                              "process %s :(%s)" % (os.getpid(), str(datetime.now())))
+        pidprocess="process %s :(%s)" % (os.getpid(), str(datetime.now()))
+        logger.debug("creation %s [pid %s]" % (BOOL_FILE_CONTROL_WATCH_DOG,pidprocess ))
+        file_put_contents(BOOL_FILE_CONTROL_WATCH_DOG,pidprocess)
 
         logger.debug("creation BOOL_FILE_CONTROL_WATCH_DOG in %s" % BOOL_FILE_CONTROL_WATCH_DOG)
 

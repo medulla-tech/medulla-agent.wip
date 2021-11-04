@@ -1015,16 +1015,7 @@ def start_agent(pathagent, agent="connection", console=False, typeagent="machine
 if __name__ == '__main__':
     ProcessData = global_data_process()
 
-    if sys.platform.startswith('win'):
-        result = win32api.SetConsoleCtrlHandler(ProcessData._CtrlHandler, 1)
-        if result == 0:
-            logging.log(DEBUGPULSE,'Could not SetConsoleCtrlHandler (error %r)' %
-                            win32api.GetLastError())
-        else:
-            logging.log(DEBUGPULSE,'Set handler for console events.')
-    elif sys.platform.startswith('linux') :
-        signal.signal(signal.SIGINT, ProcessData.signal_handler)
-        signal.signal(signal.SIGQUIT, ProcessData.signal_handler)
+
 
     if platform.system()=='Windows':
         # Windows does not support ANSI escapes and we are using API calls to set the console color
@@ -1101,6 +1092,18 @@ if __name__ == '__main__':
                             format=format,
                             filename = logfile,
                             filemode = 'a')
+
+    if sys.platform.startswith('win'):
+        result = win32api.SetConsoleCtrlHandler(ProcessData._CtrlHandler, 1)
+        if result == 0:
+            logger.debug('Could not SetConsoleCtrlHandler (error %r)' %
+                            win32api.GetLastError())
+        else:
+            logger.debug('Set handler for console events.')
+    elif sys.platform.startswith('linux') :
+        signal.signal(signal.SIGINT, ProcessData.signal_handler)
+        signal.signal(signal.SIGQUIT, ProcessData.signal_handler)
+
     logger.debug("Starting the launcher")
 
     if not opts.typemachine.lower() in ["machine",'relayserver']:
