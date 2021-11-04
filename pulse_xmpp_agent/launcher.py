@@ -1183,7 +1183,7 @@ if __name__ == '__main__':
         ProcessData.load_child_process()
 
         try:
-            logger.debug('################ LOOP LAUNCHER CYCLE %s#################' % countcycle)
+            logger.debug('### LOOP LAUNCHER CYCLE %s###' % countcycle)
             if (countcycle % 6) == 0: # Every 60 secondes.
                 if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
                     # Actions to proceed on the Linux server
@@ -1202,16 +1202,15 @@ if __name__ == '__main__':
                     # No problems found. We remove the Watchdog file.
                     os.remove(BOOL_FILE_CONTROL_WATCH_DOG)
                     if not update_rescue_on_stabilisation:
-                        update_rescue_on_stabilisation = True
-                        logger.debug('control si start agent stabilisé')
-                        logger.debug('on ne lance pas lagent rescue cat agent fonctionnement correct')
-                        # mais on sauve l'agent stabilise seulement si update_rescue_on_stabilisation est a False
+                        # agent est en mode stabilise on le sauve cette verion en agent rescut
                         try:
+                            logger.info('copy agent to agent rescue')
                             rescue_image = create_rescue_agent().save_rescue_src()
+                            update_rescue_on_stabilisation = True
                         except:
                             logger.error("\n%s" % (traceback.format_exc()))
                 else:
-                    logger.debug('l agent a 1 soucis (start pas encore stabilisé)')
+                    # probleme sur agent. reinstalle rescue
                     # We stop the agent.
                     ProcessData.stop_process_agent()
                     logger.debug('We reinstall the agent thanks to the rescue image')
@@ -1224,7 +1223,6 @@ if __name__ == '__main__':
                     # We could start the rescue agent with specific actions
                     # Even if the agent is not in a good state.
                     # Not yet implemented.
-
                     logger.debug("We restart the Agent")
                     start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
             else:
