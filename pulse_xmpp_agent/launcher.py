@@ -1210,23 +1210,23 @@ if __name__ == '__main__':
                             rescue_image = create_rescue_agent().save_rescue_src()
                         except:
                             logger.error("\n%s" % (traceback.format_exc()))
-                    else:
-                        logger.debug('l agent a 1 soucis (start pas encore stabilisé)')
-                        # We stop the agent.
-                        ProcessData.stop_process_agent()
-                        logger.debug('We reinstall the agent thanks to the rescue image')
-                        ret=install_rescue_image().reinstall_agent_rescue
-                        logger.debug('We start a reconfiguration')
-                        if opts.typemachine.lower() in ["machine"]:
-                            start_agent(pathagent,
-                                        agent="connection",
-                                        console=opts.consoledebug)
-                        # We could start the rescue agent with specific actions
-                        # Even if the agent is not in a good state.
-                        # Not yet implemented.
+                else:
+                    logger.debug('l agent a 1 soucis (start pas encore stabilisé)')
+                    # We stop the agent.
+                    ProcessData.stop_process_agent()
+                    logger.debug('We reinstall the agent thanks to the rescue image')
+                    ret=install_rescue_image().reinstall_agent_rescue
+                    logger.debug('We start a reconfiguration')
+                    if opts.typemachine.lower() in ["machine"]:
+                        start_agent(pathagent,
+                                    agent="connection",
+                                    console=opts.consoledebug)
+                    # We could start the rescue agent with specific actions
+                    # Even if the agent is not in a good state.
+                    # Not yet implemented.
 
-                        logger.debug("We restart the Agent")
-                        start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
+                    logger.debug("We restart the Agent")
+                    start_agent(pathagent, agent="am", console=opts.consoledebug, typeagent=opts.typemachine)
             else:
                 pass
         except:
