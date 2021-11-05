@@ -491,7 +491,7 @@ class install_rescue_image:
 
         logger.debug('We are reintalling the configuration files')
         for files in self.info.list_config_file_ini:
-            dest = os.path.join(directoryconffile(), f)
+            dest = os.path.join(directoryconffile(), files)
             src = os.path.join(self.info.path_rescue, "etc", files)
             logger.debug('reinstall %s %s' % (src, dest))
             self.info.remove_and_copy(src, dest)
@@ -501,7 +501,7 @@ class install_rescue_image:
         src = os.path.join(self.info.path_rescue,"fileviewer")
         logger.debug('reinstall %s %s' % (src, dest))
         shutil.rmtree(dest)
-        self.info.copytree(src, dest)
+        self.info.copytree1(src, dest)
 
 class Update_Remote_Agent:
     """
