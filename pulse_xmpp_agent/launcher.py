@@ -264,6 +264,18 @@ class base_folder:
             logger.debug('We are removing the rescue agent from %s' % self.path_rescue)
             shutil.rmtree(self.path_rescue)
 
+    def copytree1(self, src, dst, symlinks=False, ignore=None):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dst, item)
+            if os.path.isdir(s):
+                self.copytree1(s, d, symlinks, ignore)
+            else:
+                if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                    shutil.copy2(s, d)
+
     def copytree(self, src, dst, symlinks=False, ignore=None):
         """
             See shutil.copytree documentation:
@@ -1109,9 +1121,18 @@ if __name__ == '__main__':
     if not opts.typemachine.lower() in ["machine",'relayserver']:
         logger.error("The parameter for the -t option is wrong. It must be machine or relayserver")
         sys.exit(1)
+
+    #verify conf file exist
+
+    namefileconfig = conffilename(opts.typemachine)
+    if not os.path.isfile(namefileconfig):
+        # recharge agent
+        ret=install_rescue_image().reinstall_agent_rescue
+
     if not testagentconf(opts.typemachine):
         logger.debug("Some configuration options are missing. You may need to add guacamole_baseurl connection/port/server' or global/relayserver_agent")
         logger.debug("We need to reconfigure")
+        ret=install_rescue_image().reinstall_agent_rescue
 
     networkchanged = networkchanged()
     if networkchanged:
