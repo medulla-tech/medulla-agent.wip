@@ -27,7 +27,7 @@ import logging
 
 logger = logging.getLogger()
 DEBUGPULSEPLUGIN = 25
-plugin = {"VERSION" : "2.0", "NAME" : "rsapplicationdeploymentjson", "TYPE" : "relayserver"}
+plugin = {"VERSION" : "2.1", "NAME" : "rsapplicationdeploymentjson", "TYPE" : "relayserver"}
 
 
 
@@ -59,6 +59,7 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
         datasend['data'] ['packagefile'] = os.listdir(datasend['data']['path'])
         datasend['data'] ['Dtypequery'] =  "TQ"
         datasend['data'] ['Devent'] = "DEPLOYMENT START"
+        datasend['data'] ['dep'] = ""
         datasend['data'] ['name'] = managepackage.managepackage.getnamepackagefromuuidpackage(data['deploy'])
         objectxmpp.send_message(mto=message['from'],
                                 mbody=json.dumps(datasend),

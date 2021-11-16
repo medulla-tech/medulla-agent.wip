@@ -694,6 +694,28 @@ def action(objectxmpp, action, sessionid, data, message, dataerreur):
         logger.debug("###################################################")
         logger.debug("##############AGENT RELAY SERVER###################")
         logger.debug("###################################################")
+        depplan=[]
+        if 'dep' in data: #dependance pour install
+            # on supprime les dependence.
+
+            if 'descriptor' in data and 'Dependency' in data['descriptor']:
+                utils.file_put_contents_w_a("/tmp/logdeploiement", "\nON VIRE DEPENDENCE", option="a")
+                data['descriptor']['Dependency']=[]
+
+        elif 'name' in data and \
+            'descriptor' in data and \
+                'info' in data['descriptor'] and \
+                    'Dependency' in data['descriptor']['info'] and\
+                        len(data['descriptor']['info'][ 'Dependency']):
+            # deploiement avec dependance
+            depplan = managepackage.managepackage.create_plan_deploiement(data['name'])
+            logger.debug("DEPLOYMENT PLAN : %s"%depplan)
+            depplan.pop()
+            #n reinscrit le plan dans les dependence.
+            data['descriptor']['info'][ 'Dependency']=[str(x) for x in depplan]
+
+            logger.debug("need Dependency %s"%data['descriptor']['info'][ 'Dependency'])
+
         try:
             objectxmpp.reversedelpoy  # reversedelpoy add port for reverse ssh, used for del reverse
         except AttributeError:
