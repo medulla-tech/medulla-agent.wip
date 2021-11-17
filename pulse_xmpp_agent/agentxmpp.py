@@ -1581,7 +1581,21 @@ class MUCBot(sleekxmpp.ClientXMPP):
                     self.ipconnection = self.config.public_ip_relayserver
             except Exception:
                 pass
-
+        else:
+            result, jid_struct = unregister_agent(self.boundjid.user,
+                                                  self.boundjid.domain,
+                                                  self.boundjid.resource)
+            if result:
+                # il faut unregistrer jid_struct
+                # send unregistered user to substitut subscribe
+                datasend = {'action' : 'unregistrer_agent',
+                            'sessionid' : getRandomName(6, "unregistrer_agent"),
+                            'data' : jid_struct,
+                            'ret' : 0,
+                            'base64' : False }
+                self.send_message(  mbody = json.dumps(datasend),
+                                    mto = self.sub_subscribe,
+                                    mtype ='chat')
         self.agentrelayserverrefdeploy = self.config.jidchatroomcommand.split('@')[0][3:]
 
         self.xmpplog("Starting %s agent -> subscription agent is %s" % (self.config.agenttype, self.sub_subscribe),
