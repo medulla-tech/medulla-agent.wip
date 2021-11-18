@@ -6789,6 +6789,46 @@ class XmppMasterDatabase(DatabaseHelper):
             return -1
 
     @DatabaseHelper._sessionm
+    def Update_version_agent_machine_md5(self,
+                                         session,
+                                         hostname,
+                                         md5,
+                                         version):
+        """
+        Cette function met a jour les champ md5 et version agent de l'agent.
+        Args:
+            session: The sqlalchemy session
+            hostname: The hostname of the machine
+            md5: agent fingerprint
+           version : agent version
+        """
+        try:
+            sql="""
+                UPDATE
+                    `xmppmaster`.`uptime_machine`
+                SET
+                    `md5agentversion` = '%s',
+                    `version` = '%s'
+                WHERE
+                    (id = (SELECT
+                            id
+                        FROM
+                            xmppmaster.uptime_machine
+                        WHERE
+                            hostname LIKE '%s' AND status = 1
+                        ORDER BY id DESC
+                        LIMIT 1));"""%(md5,
+                                    version,
+                                    hostname)
+            session.execute(sql)
+            session.commit()
+            session.flush()
+            return True
+        except Exception, e:
+            logging.getLogger().error(str(e))
+            return False
+
+    @DatabaseHelper._sessionm
     def last_event_presence_xmpp(self,
                                  session,
                                  jid,

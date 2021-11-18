@@ -2463,9 +2463,12 @@ AGENT %s ERROR TERMINATE"""%(self.boundjid.bare,
                     dataobj['packageserver']['public_ip'] = self.config.ipxmpp
         except Exception:
             dataobj["moderelayserver"] = "static"
+
+        md5agentversion = Update_Remote_Agent(self.pathagent, True ).get_fingerprint_agent_base()
+        dataobj['md5agentversion']=md5agentversion
         ###################Update agent from MAster#############################
         if self.config.updating == 1:
-            dataobj['md5agent'] = Update_Remote_Agent(self.pathagent, True ).get_fingerprint_agent_base()
+            dataobj['md5agent'] = md5agentversion
         ###################End Update agent from MAster#############################
         #todo determination lastusersession to review
         lastusersession = ""

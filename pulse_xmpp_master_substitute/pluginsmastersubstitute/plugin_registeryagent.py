@@ -148,6 +148,17 @@ def action(xmppobject, action, sessionid, data, msg, ret, dataobj):
                                                 '',
                                                 xmppobject.boundjid.bare,
                                                 xmppobject.boundjid.bare)
+            # update finger print agent jfkjfk
+            md5agentversion = data['md5agentversion']  if "md5agentversion" in data else ""
+            versionagent = data['versionagent']  if "versionagent" in data else ""
+            hostnamemach = data['machine']  if "machine" in data else ""
+            arrayhost = hostnamemach.split('.')
+            arrayhost.pop()
+            if arrayhost:
+                hostnamemach='.'.join(arrayhost)
+                XmppMasterDatabase().Update_version_agent_machine_md5(hostnamemach,
+                                                                    md5agentversion,
+                                                                    versionagent)
             if 'oldjid' in data:
                 logger.debug("The hostname changed from %s to %s" % (data['oldjid'], data['from']))
                 XmppMasterDatabase().delPresenceMachinebyjiduser(jid.JID(data['oldjid']).user)
