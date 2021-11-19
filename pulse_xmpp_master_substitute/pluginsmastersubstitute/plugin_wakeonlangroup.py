@@ -35,7 +35,7 @@ logger = logging.getLogger()
 
 # plugin run wake on lan on mac address
 # group mac address wakeonlangroup different wakeonlan
-plugin = {"VERSION": "1.1", "NAME": "wakeonlangroup", "TYPE": "substitute"}
+plugin = {"VERSION": "1.2", "NAME": "wakeonlangroup", "TYPE": "substitute"}
 
 def action(xmppobject, action, sessionid, data, message, ret):
     logger.debug("=====================================================")
@@ -51,7 +51,7 @@ def action(xmppobject, action, sessionid, data, message, ret):
         logger.error("plugin %s\n%s" % (plugin['NAME'], traceback.format_exc()))
 
     try:
-        if 'macadress' in data:
+        if 'macadress' in data or 'macaddress' in data:
             if xmppobject.wakeonlangroupremotelan :
                 senddataplugin = {'action': 'wakeonlangroup',
                                   'sessionid': sessionid,
