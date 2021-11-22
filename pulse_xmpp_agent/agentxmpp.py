@@ -2110,6 +2110,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
                         self.reinstall_agent()
                 else:
                     logger.warning("ask update but descriptor_agent base missing.")
+                    try:
+                        os.remove(os.path.join(self.pathagent, "BOOL_UPDATE_AGENT"))
+                    except OSError:
+                        pass
 
     def restartBot(self, wait=10):
         logging.log(DEBUGPULSE,"RESTART BOOT")
