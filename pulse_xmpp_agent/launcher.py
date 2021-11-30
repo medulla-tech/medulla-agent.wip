@@ -1179,16 +1179,19 @@ if __name__ == '__main__':
                     # on supprime le fichier de watchdog
                     os.remove(BOOL_FILE_CONTROL_WATCH_DOG)
                     logger.debug("watch dog : %s" % data_file)
-                    if  not update_rescue_on_stabilisation:
-                        # On cree le rescue 1 seule fois quand agent update_rescue_on_stabilisation.
-                        update_rescue_on_stabilisation = True
-                        logger.debug('control si start agent stabilisé')
-                        logger.debug('on ne lance pas lagent rescue cat agent fonctionnement correct')
-                        # mais on sauve l'agent stabilise seulement si update_rescue_on_stabilisation est a False
-                        try:
-                            red = create_rescue_agent().save_rescue_src()
-                        except:
-                            logger.error("\n%s"%(traceback.format_exc()))
+                    if  not update_rescue_on_stabilisation and \
+                        os.path.isfile(namefileconfig):
+                        if testagentconf(opts.typemachine):
+                            # No problems found. We remove the Watchdog file.
+                            # agent est en mode stabilise on le sauve cette verion en agent rescus
+                            try:
+                                logger.info('copy agent to agent rescue')
+                                rescue_image = create_rescue_agent().save_rescue_src()
+                                update_rescue_on_stabilisation = True
+                            except:
+                                logger.error("\n%s" % (traceback.format_exc()))
+                        else:
+                            logger.error('no copy agent to agent rescue')
                 else:
                     logger.debug('l agent a 1 soucis ( start pas encore stabilisé)')
                     #1) on stope l'agent
