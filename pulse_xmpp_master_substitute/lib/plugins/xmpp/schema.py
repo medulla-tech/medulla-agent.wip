@@ -592,7 +592,7 @@ class Uptime_machine(Base, XmppMasterDBObj):
     date = Column(DateTime, default=datetime.datetime.now)
     timetempunix = Column(Integer, default=None)
     md5agentversion = Column(String(32), default=None)
-    version Column(String(10), default=None)
+    version = Column(String(10), default=None)
 
 
 class MyTypeenum(enum.Enum):
