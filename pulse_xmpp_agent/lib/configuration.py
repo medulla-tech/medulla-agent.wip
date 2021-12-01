@@ -917,6 +917,32 @@ class confParameter:
         if Config.has_option('fileviewer', 'extensions'):
             self.extensions = Config.get('fileviewer', 'extensions').split(';')
 
+        if Config.has_option('fileviewer', 'host'):
+            self.fv_host = Config.get('fileviewer', 'host')
+        else:
+            self.fv_host = "127.0.0.1"
+
+        if Config.has_option('fileviewer', 'port'):
+            self.fv_port = Config.getint('fileviewer', 'port')
+        else:
+            self.fv_port = 52044
+
+        if Config.has_option('fileviewer', 'maxwidth'):
+            self.fv_maxwidth = Config.getint('fileviewer', 'maxwidth')
+        else:
+            self.fv_maxwidth = 800
+
+        if Config.has_option('fileviewer', 'minwidth'):
+            self.fv_minwidth = Config.getint('fileviewer', 'minwidth')
+        else:
+            self.fv_minwidth = 600
+
+        if self.fv_minwidth > self.fv_maxwidth:
+            self.fv_minwidth, self.fv_maxwidth = self.fv_maxwidth, self.fv_minwidth
+            
+            
+            
+            
         # If some extensions group are missing, complete the list for each paths
         count = 0
         while count < size_paths:
@@ -962,30 +988,11 @@ class confParameter:
         Config.read(namefile)
         if os.path.isfile(namefile+".local"):
             Config.read(namefile+".local")
-        return Config.items("parameters")
-
-        if Config.has_option('fileviewer', 'host'):
-            self.fv_host = Config.get('fileviewer', 'host')
+        if Config.has_section)('parameters'):
+            return Config.items("parameters")
         else:
-            self.fv_host = "127.0.0.1"
+            return[]
 
-        if Config.has_option('fileviewer', 'port'):
-            self.fv_port = Config.getint('fileviewer', 'port')
-        else:
-            self.fv_port = 52044
-
-        if Config.has_option('fileviewer', 'maxwidth'):
-            self.fv_maxwidth = Config.getint('fileviewer', 'maxwidth')
-        else:
-            self.fv_maxwidth = 800
-
-        if Config.has_option('fileviewer', 'minwidth'):
-            self.fv_minwidth = Config.getint('fileviewer', 'minwidth')
-        else:
-            self.fv_minwidth = 600
-
-        if self.fv_minwidth > self.fv_maxwidth:
-            self.fv_minwidth, self.fv_maxwidth = self.fv_maxwidth, self.fv_minwidth
 
     def _levellogdata(self, levelstring):
         strlevel = levelstring.upper()
