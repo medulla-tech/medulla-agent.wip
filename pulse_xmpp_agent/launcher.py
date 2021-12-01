@@ -1006,9 +1006,13 @@ if __name__ == '__main__':
 
     BOOL_FILE_CONTROL_WATCH_DOG = os.path.join(directory_file,
                                                "BOOL_FILE_CONTROL_WATCH_DOG")
+    CONFIG_FILE_CONTROL_WATCH_DOG = os.path.join(directory_file,
+                                               "CONFIG_FILE_CONTROL_WATCH_DOG")
+
     if os.path.isfile(BOOL_FILE_CONTROL_WATCH_DOG):
         os.remove(BOOL_FILE_CONTROL_WATCH_DOG)
-
+    if os.path.isfile(CONFIG_FILE_CONTROL_WATCH_DOG):
+        os.remove(CONFIG_FILE_CONTROL_WATCH_DOG)
     file_put_contents(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                    "INFOSTMP",
                                    "pidlauncher"), "%s" % os.getpid())
@@ -1153,6 +1157,9 @@ if __name__ == '__main__':
     countcycle = 1
     logger.debug('launcher listen mode')
     logger.debug('moditoring and watch dog')
+    nameconfigfile = "relayconf.ini"
+    if opts.typemachine.lower() in ["machine"]:
+        nameconfigfile = "agentconf.ini"
     while 1:
         if ProcessData.terminate_process:
             logger.debug("Quit program on event")
@@ -1186,7 +1193,18 @@ if __name__ == '__main__':
                             # agent est en mode stabilise on le sauve cette verion en agent rescus
                             try:
                                 logger.info('copy agent to agent rescue')
-                                rescue_image = create_rescue_agent().save_rescue_src()
+                                rescue_image = create_rescue_agent()
+                                rescue_image.save_rescue_src()
+
+                                if os.path.isfile(CONFIG_FILE_CONTROL_WATCH_DOG):
+                                    dest = os.path.join(rescue_image.info.path_rescue,"etc", nameconfigfile)
+                                    loadfile = ""
+                                    loadfile = file_get_contents(CONFIG_FILE_CONTROL_WATCH_DOG)
+                                    if loadfile:
+                                        os.remove(CONFIG_FILE_CONTROL_WATCH_DOG)
+                                        logger.debug("copy config file utilise %s to %s" % (CONFIG_FILE_CONTROL_WATCH_DOG, dest ))
+                                        file_put_contents(dest,loadfile)
+
                                 update_rescue_on_stabilisation = True
                             except:
                                 logger.error("\n%s" % (traceback.format_exc()))

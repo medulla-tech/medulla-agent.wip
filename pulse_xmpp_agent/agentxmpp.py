@@ -2844,6 +2844,14 @@ def doTask( optstypemachine, optsconsoledebug, optsdeamon,
         server1.subscribe()
         cherrypy.engine.start()
 
+    namefileconfig = conffilename(optstypemachine)
+    fichierconfsave=file_get_contents(namefileconfig)
+    directory_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                  "INFOSTMP")
+    CONFIG_FILE_CONTROL_WATCH_DOG = os.path.join(directory_file,
+        "CONFIG_FILE_CONTROL_WATCH_DOG")
+    file_put_contents(CONFIG_FILE_CONTROL_WATCH_DOG,fichierconfsave)
+
     if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         # completing process
         programrun = True
