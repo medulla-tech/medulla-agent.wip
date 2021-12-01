@@ -56,7 +56,11 @@ def changeconfigurationsubtitute(conffile, confsubtitute):
 
     """
     Config = ConfigParser.ConfigParser()
-    Config.read(conffile)
+    try:
+        Config.read(conffile)
+    except ConfigParser.Error as e:
+        logger.error("%s", str(e))
+        return
     if not Config.has_section('substitute'):
         Config.add_section('substitute')
     for t in confsubtitute['conflist']:
@@ -79,7 +83,11 @@ def changeconnection(conffile, port, ipserver, jidrelayserver, baseurlguacamole)
         baseurlguacamole: the url used for guacamole ( section type )
     """
     Config = ConfigParser.ConfigParser()
-    Config.read(conffile)
+    try:
+        Config.read(conffile)
+    except ConfigParser.Error as e:
+        logger.error("%s", str(e))
+        return
     domain = jid.JID(jidrelayserver).domain
     if not Config.has_option("configuration_server", "confdomain"):
         logger.warning("confdomain parameter missing in configuration_server")
@@ -133,7 +141,11 @@ def nextalternativeclusterconnection(conffile):
         return []
 
     Config = ConfigParser.ConfigParser()
-    Config.read(conffile)
+    try:
+        Config.read(conffile)
+    except ConfigParser.Error as e:
+        logger.error("%s", str(e))
+        return[]
 
     nextserver          = Config.getint('alternativelist', 'nextserver')
     nbserver            = Config.getint('alternativelist', 'nbserver')
@@ -224,7 +236,11 @@ def loadparameters(namefile, group, key):
     """
 
     Config = ConfigParser.ConfigParser()
-    Config.read(namefile)
+    try:
+        Config.read(namefile)
+    except ConfigParser.Error as e:
+        logger.error("%s", str(e))
+        return None
     value = ""
     if Config.has_option("group", "key"):
         value = Config.get('group', 'key')
@@ -234,9 +250,13 @@ class substitutelist:
     def __init__(self):
         Config = ConfigParser.ConfigParser()
         namefileconfig = conffilename('machine')
-        Config.read(namefileconfig)
-        if os.path.exists(namefileconfig + ".local"):
-            Config.read(namefileconfig + ".local")
+        try:
+            Config.read(namefileconfig)
+            if os.path.exists(namefileconfig + ".local"):
+                Config.read(namefileconfig + ".local")
+        except ConfigParser.Error as e:
+            logger.error("%s", str(e))
+            return
         #################substitute####################
 
         self.sub_inventory = ["master@pulse"]
@@ -288,9 +308,13 @@ class confParameter:
     def __init__(self, typeconf='machine'):
         Config = ConfigParser.ConfigParser()
         namefileconfig = conffilename(typeconf)
-        Config.read(namefileconfig)
-        if os.path.exists(namefileconfig + ".local"):
-            Config.read(namefileconfig + ".local")
+        try:
+            Config.read(namefileconfig)
+            if os.path.exists(namefileconfig + ".local"):
+                Config.read(namefileconfig + ".local")
+        except ConfigParser.Error as e:
+            logger.error("%s", str(e))
+            return
         self.packageserver = {}
         self.Port = Config.get('connection', 'port')
         self.Server = ipfromdns(Config.get('connection', 'server'))
@@ -939,10 +963,10 @@ class confParameter:
 
         if self.fv_minwidth > self.fv_maxwidth:
             self.fv_minwidth, self.fv_maxwidth = self.fv_maxwidth, self.fv_minwidth
-            
-            
-            
-            
+
+
+
+
         # If some extensions group are missing, complete the list for each paths
         count = 0
         while count < size_paths:
@@ -985,10 +1009,14 @@ class confParameter:
 
     def loadparametersplugins(self, namefile):
         Config = ConfigParser.ConfigParser()
-        Config.read(namefile)
-        if os.path.isfile(namefile+".local"):
-            Config.read(namefile+".local")
-        if Config.has_section)('parameters'):
+        try:
+            Config.read(namefile)
+            if os.path.isfile(namefile+".local"):
+                Config.read(namefile+".local")
+        except ConfigParser.Error as e:
+            logger.error("%s", str(e))
+            return[]
+        if Config.has_section('parameters'):
             return Config.items("parameters")
         else:
             return[]
