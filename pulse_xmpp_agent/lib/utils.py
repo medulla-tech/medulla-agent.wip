@@ -52,6 +52,7 @@ from Crypto.Cipher import AES
 import tarfile
 from functools import wraps
 import string
+import platform
 
 logger = logging.getLogger()
 
@@ -94,6 +95,21 @@ class Env(object):
         else:
             return os.path.expanduser('~pulseuser')
 
+
+
+def ireplace(old, repl, text):
+    """replace dans text old par repl sans tenir compte de la case"""
+    return re.sub('(?i)'+re.escape(old), lambda m: repl, text)
+
+def os_version():
+    """renvoi le titre de os """
+    version_name= platform.platform()
+    if sys.platform.startswith('win'):
+        c = wmi.WMI()
+        for os in c.Win32_OperatingSystem():
+            version_name= os.Caption
+        # version_name=ireplace("Microsoft", "", version_name).strip()
+    return version_name
 
 # debug decorator
 def minimum_runtime(t):
