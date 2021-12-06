@@ -105,6 +105,7 @@ def os_version():
     """renvoi le titre de os """
     version_name= platform.platform()
     if sys.platform.startswith('win'):
+        pythoncom.CoInitialize()
         c = wmi.WMI()
         for os in c.Win32_OperatingSystem():
             version_name= os.Caption
