@@ -1504,7 +1504,7 @@ class MUCBot(sleekxmpp.ClientXMPP):
 
     def changed_subscription(self, presence):
         if presence['from'].bare  !=  self.boundjid.bare:
-        logger.info("**********   changed_subscription %s %s"%(presence['from'],presence['type'] ))
+            logger.info("**********   changed_subscription %s %s"%(presence['from'],presence['type'] ))
 
     def presence_unavailable(self, presence):
         if presence['from'].bare  !=  self.boundjid.bare:
