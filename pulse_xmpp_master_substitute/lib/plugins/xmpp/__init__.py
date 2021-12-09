@@ -416,6 +416,29 @@ class XmppMasterDatabase(DatabaseHelper):
             logging.getLogger().error(str(e))
 
     @DatabaseHelper._sessionm
+    def update_status_waiting_for_machine_off_in_state_deploy_start(self, session):
+        try:
+            sql = """UPDATE `xmppmaster`.`deploy`
+                        SET
+                            `state` = 'WAITING MACHINE ONLINE'
+                        WHERE
+                            deploy.sessionid IN (SELECT
+                                    sessionid
+                                FROM
+                                    xmppmaster.deploy
+                                        JOIN
+                                    xmppmaster.machines ON machines.jid = deploy.jidmachine
+                                WHERE
+                                    deploy.state = 'DEPLOYMENT START'
+                                        AND (NOW() BETWEEN deploy.startcmd AND deploy.endcmd)
+                                        AND machines.enabled = 0);"""
+            session.execute(sql)
+            session.commit()
+            session.flush()
+        except Exception:
+            logger.error("%s" % (traceback.format_exc()))
+
+    @DatabaseHelper._sessionm
     def search_machines_from_state(self, session, state,subdep_user=None):
         dateend = datetime.now()
         if subdep_user:
