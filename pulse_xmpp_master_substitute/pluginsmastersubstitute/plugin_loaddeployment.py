@@ -361,6 +361,11 @@ def scheduledeployrecoveryjob(self):
 
             # change status des machine en deployement start qui sont off on les remet en attente.
             XmppMasterDatabase().update_status_waiting_for_machine_off_in_state_deploy_start()
+
+
+            """ selectionne machine data et session  deployement rester bloque sur starting plus de 60 secondes"""
+            XmppMasterDatabase().update_status_waiting_for_deploy_on_mochine_restart_or_stop()
+
             msglog=[]
             # relance machine off_line to on_line
             machines_waitting_online = XmppMasterDatabase().search_machines_from_state("WAITING MACHINE ONLINE",
