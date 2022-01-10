@@ -39,6 +39,7 @@ import subprocess
 import psutil
 import random
 import hashlib
+import imp
 from lib.manageresourceplugin import resource_plugin
 import cherrypy
 from lib.reverseport import reverse_port_ssh
@@ -2083,6 +2084,10 @@ class MUCBot(sleekxmpp.ClientXMPP):
             logger.warning("the agent is already installed for version  %s"%(versiondata))
         elif result['code'] == 1:
             logger.info("installed success agent version %s"%(versiondata))
+            logger.info("restart agent or stop agent console")
+            logger.info("installed success agent version %s"%(versiondata))
+            logger.info("restart agent or stop agent console ")
+            self.restart_service()
         elif result['code'] == 120:
             logger.error("installed default agent version %s (rollback previous version.). We will not switch to new agent."%(versiondata))
         elif result['code'] == 121:
@@ -2094,6 +2099,47 @@ class MUCBot(sleekxmpp.ClientXMPP):
         else:
             logger.error("installed agent version %s (indefinie operation). We will not switch to new agent."%(versiondata))
             logger.error("return code is : %s"%(result['code']))
+
+    def stop_kill_agent(self):
+        if sys.platform.startswith('win'):
+            windowfilepid = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                             "INFOSTMP",
+                                             "pidagent")
+            if os.path.isfile(windowfilepid):
+                pid = file_get_contents(windowfilepid).replace("\n","").replace("\r","").strip()
+                self.kill_proc_tree(pid)
+
+    def kill_proc_tree(self, pid, including_parent=True):
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        for child in children:
+            child.kill()
+        gone, still_alive = psutil.wait_procs(children, timeout=5)
+        if including_parent:
+            parent.kill()
+            parent.wait(5)
+
+    def restart_service(self):
+        try:
+            if not self.config.optsconsoledebug or not self.config.optsdeamon:
+                #restart service
+                logger.info("restart service 'pulse agent'")
+                if sys.platform.startswith('win'):
+                    os.execlp("powershell", "-command" , "\"Restart-Service 'pulse agent' -Force;\"")
+                elif sys.platform.startswith('linux'):
+                    # pour linux on peut avoir 1 agent pour relay server
+                    if self.config.optstypemachine == "machine":
+                        os.execlp("systemctrl", "restart" , "pulse-xmpp-agent-machine.service")
+                    else:
+                        os.execlp("systemctrl", "restart" , "pulse-xmpp-agent-relay.service")
+                else:
+                    # on doit implemente  pour la commande de start des service de mac os pour machine seulement
+                    logger.info("restart on machine darwin not implemented yet")
+            else:
+                logger.info("mode console restart by cli command for new version code")
+        except Exception as e:
+            logging.error(" %s " %(str(e)))
+            logger.error("\n%s"%(traceback.format_exc()))
 
     def checkinstallagent(self):
         # verify si boollean existe.
@@ -2978,6 +3024,13 @@ class process_xmpp_agent():
             setgetrestart()
             logging.log(DEBUGPULSE,"WHILE RESTART VARIABLE %s"%setgetrestart(-1))
             tg = tgconf(optstypemachine)
+
+            tg.optstypemachine= optstypemachine
+            tg.optsconsoledebug= optsconsoledebug
+            tg.optsdeamon= optsdeamon
+            tg.tglevellog= tglevellog
+            tg.tglogfile= tglogfile
+
             xmpp = MUCBot(tg,
                           queue_recv_tcp_to_xmpp,
                           queueout,
