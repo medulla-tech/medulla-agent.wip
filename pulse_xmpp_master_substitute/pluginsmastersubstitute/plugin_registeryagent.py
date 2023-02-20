@@ -32,7 +32,8 @@ from lib.plugins.glpi import Glpi
 from lib.plugins.kiosk import KioskDatabase
 from lib.manageRSAsigned import MsgsignedRSA
 from sleekxmpp import jid
-from lib.utils import getRandomName
+from lib.utils import getRandomName, \
+                      call_plugin
 import re
 from distutils.version import LooseVersion
 import ConfigParser
